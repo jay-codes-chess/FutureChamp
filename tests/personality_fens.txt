@@ -1,0 +1,32 @@
+# Personality Test FENs
+# Format: description | FEN
+
+# 1. Knight Outpost - White knight on d5 supported by pawn on c4
+knight_outpost|r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4
+
+# 2. Bad Bishop - White bishop stuck behind pawns on dark squares
+bad_bishop|r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 w - - 8 9
+
+# 3. Closed Structure - Both sides have locked pawn centers
+closed_structure|r2qk2r/ppppnppp/2p5/3p4/3P4/2P5/PPPNPPPP/R2QK2R w KQ - 0 8
+
+# 4. Rook on Open File - White rook on open d-file
+rook_open_file|r3k2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R3K2R w KQ - 4 9
+
+# 5. King Safety - Black castled, white attacking
+king_safety|r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P2/5N2/PPPP1PPP/RNBQ1RK1 b - - 5 6
+
+# 6. Passed Pawn - White passed pawn on e6
+passed_pawn|8/4P3/8/8/8/8/8/7K w - - 0 1
+
+# 7. Space Advantage - White controls more central space
+space_advantage|r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 4 4
+
+# 8. Initiative - White to move with development lead
+initiative|r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/2KQ1RRR b kq - 0 6
+
+# 9. Material Imbalance - White has extra pawn
+material_imbalance|8/8/8/8/8/8/7P/7K w - - 0 1
+
+# 10. Complex Position - Multiple strategic elements
+complex|r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P2/3P1N2/PPP2PPP/RNBQ1RK1 w - - 8 9

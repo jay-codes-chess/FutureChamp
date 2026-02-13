@@ -110,6 +110,12 @@ void cmd_uci() {
     std::cout << "option name DebugEvalTrace type check default false" << std::endl;
     std::cout << "option name DebugTraceWithParams type check default false" << std::endl;
     
+    // === PERSONALITY ===
+    std::cout << "option name Personality type combo default default "
+              << "var default var petrosian var tal var capablanca var club1800" << std::endl;
+    std::cout << "option name PersonalityAutoLoad type check default true" << std::endl;
+    std::cout << "option name SavePersonality type string default \"\"" << std::endl;
+    
     // === CORE MATERIAL / IMBALANCE ===
     std::cout << "option name MaterialPriority type spin default 100 min 1 max 100" << std::endl;
     std::cout << "option name ImbalanceScale type spin default 100 min 30 max 150" << std::endl;
@@ -451,7 +457,31 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
         Evaluation::set_debug_trace(options.debug_eval_trace);
     } else if (name == "DebugTraceWithParams") {
         Evaluation::set_param("DebugTraceWithParams", value);
-    } 
+    } else if (name == "PersonalityAutoLoad") {
+        Evaluation::get_params().personality_auto_load = (value == "true");
+    } else if (name == "Personality") {
+        if (Evaluation::get_params().personality_auto_load) {
+            if (Evaluation::load_personality(value)) {
+                std::cout << "info string Loaded personality: " << value << std::endl;
+            } else {
+                std::cout << "info string Failed to load personality: " << value << std::endl;
+            }
+        }
+    } else if (name == "SavePersonality") {
+        if (!value.empty() && value != "\"\"") {
+            // Remove quotes if present
+            size_t start = value.find_first_not_of('"');
+            size_t end = value.find_last_not_of('"');
+            if (start != std::string::npos && end != std::string::npos) {
+                value = value.substr(start, end - start + 1);
+            }
+            if (Evaluation::save_personality(value)) {
+                std::cout << "info string Saved personality: " << value << std::endl;
+            } else {
+                std::cout << "info string Failed to save personality: " << value << std::endl;
+            }
+        }
+    }
     // Pass all other params to Evaluation params system
     else if (Evaluation::set_param(name, value)) {
         // Param was set successfully

@@ -51,10 +51,20 @@ struct Params {
     
     // === DEBUG ===
     bool debug_trace_with_params = false;  // Include params in trace output
+    
+    // === PERSONALITY ===
+    std::string current_personality = "default";  // Current loaded personality
+    bool personality_auto_load = true;  // Auto-load personality from JSON
 };
 
 // Get reference to global params
 Params& get_params();
+
+// Load personality from JSON file
+bool load_personality(const std::string& name);
+
+// Save current params to JSON file
+bool save_personality(const std::string& name);
 
 // Set a param by name (returns true if successful)
 bool set_param(const std::string& name, const std::string& value);

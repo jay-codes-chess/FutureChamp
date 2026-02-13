@@ -3,8 +3,10 @@
  */
 
 #include "params.hpp"
+#include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <iostream>
 
 namespace Evaluation {
 
@@ -13,6 +15,90 @@ static Params global_params;
 
 Params& get_params() {
     return global_params;
+}
+
+// Load personality from JSON file
+bool load_personality(const std::string& name) {
+    std::string filename = "./personalities/" + name + ".json";
+    std::ifstream file(filename);
+    
+    if (!file.is_open()) {
+        std::cerr << "Failed to open personality file: " << filename << std::endl;
+        return false;
+    }
+    
+    // Simple JSON parsing (key: value pairs)
+    std::string line;
+    while (std::getline(file, line)) {
+        // Skip empty lines and braces
+        if (line.empty() || line == "{" || line == "}") continue;
+        
+        // Parse "key": value
+        size_t colon_pos = line.find(':');
+        if (colon_pos == std::string::npos) continue;
+        
+        std::string key = line.substr(0, colon_pos);
+        std::string value = line.substr(colon_pos + 1);
+        
+        // Trim whitespace
+        key.erase(0, key.find_first_not_of(" \""));
+        key.erase(key.find_last_not_of(" \"") + 1);
+        value.erase(0, value.find_first_not_of(" \""));
+        value.erase(value.find_last_not_of(" \"") + 1);
+        
+        // Handle boolean values
+        if (value == "true") {
+            set_param(key, "true");
+        } else if (value == "false") {
+            set_param(key, "false");
+        } else {
+            set_param(key, value);
+        }
+    }
+    
+    global_params.current_personality = name;
+    return true;
+}
+
+// Save current params to JSON file
+bool save_personality(const std::string& name) {
+    std::string filename = "./personalities/" + name + ".json";
+    std::ofstream file(filename);
+    
+    if (!file.is_open()) {
+        std::cerr << "Failed to write personality file: " << filename << std::endl;
+        return false;
+    }
+    
+    const auto& p = global_params;
+    
+    file << "{\n";
+    file << "  \"MaterialPriority\": " << p.material_priority << ",\n";
+    file << "  \"ImbalanceScale\": " << p.imbalance_scale << ",\n";
+    file << "  \"W_PawnStructure\": " << p.w_pawn_structure << ",\n";
+    file << "  \"W_PieceActivity\": " << p.w_piece_activity << ",\n";
+    file << "  \"W_KingSafety\": " << p.w_king_safety << ",\n";
+    file << "  \"W_Initiative\": " << p.w_initiative << ",\n";
+    file << "  \"W_Imbalance\": " << p.w_imbalance << ",\n";
+    file << "  \"W_KnowledgeConcepts\": " << p.w_knowledge_concepts << ",\n";
+    file << "  \"OutpostBonus\": " << p.outpost_bonus << ",\n";
+    file << "  \"BishopPairBonus\": " << p.bishop_pair_bonus << ",\n";
+    file << "  \"RookOpenFileBonus\": " << p.rook_open_file_bonus << ",\n";
+    file << "  \"PassedPawnBonus\": " << p.passed_pawn_bonus << ",\n";
+    file << "  \"PawnShieldPenalty\": " << p.pawn_shield_penalty << ",\n";
+    file << "  \"ConceptOutpostWeight\": " << p.concept_outpost_weight << ",\n";
+    file << "  \"ConceptBadBishopWeight\": " << p.concept_bad_bishop_weight << ",\n";
+    file << "  \"ConceptSpaceWeight\": " << p.concept_space_weight << ",\n";
+    file << "  \"HumanEnable\": " << (p.human_enable ? "true" : "false") << ",\n";
+    file << "  \"HumanTemperature\": " << p.human_temperature << ",\n";
+    file << "  \"HumanNoiseCp\": " << p.human_noise_cp << ",\n";
+    file << "  \"HumanBlunderRate\": " << p.human_blunder_rate << ",\n";
+    file << "  \"CandidateMarginCp\": " << p.candidate_margin_cp << ",\n";
+    file << "  \"CandidateMovesMax\": " << p.candidate_moves_max << ",\n";
+    file << "  \"RandomSeed\": " << p.random_seed << "\n";
+    file << "}\n";
+    
+    return true;
 }
 
 bool set_param(const std::string& name, const std::string& value) {
@@ -116,9 +202,6 @@ std::string dump_params() {
     oss << "ConceptOutpostWeight=" << p.concept_outpost_weight << std::endl;
     oss << "ConceptBadBishopWeight=" << p.concept_bad_bishop_weight << std::endl;
     oss << "ConceptSpaceWeight=" << p.concept_space_weight << std::endl;
-    oss << "RookOpenFileBonus=" << p.rook_open_file_bonus << std::endl;
-    oss << "PassedPawnBonus=" << p.passed_pawn_bonus << std::endl;
-    oss << "PawnShieldPenalty=" << p.pawn_shield_penalty << std::endl;
     oss << "CandidateMarginCp=" << p.candidate_margin_cp << std::endl;
     oss << "CandidateMovesMax=" << p.candidate_moves_max << std::endl;
     oss << "HumanEnable=" << (p.human_enable ? "true" : "false") << std::endl;

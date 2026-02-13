@@ -168,7 +168,9 @@ int evaluate_at_root(const Board& board) {
         
         // Optionally include params in trace
         if (p.debug_trace_with_params) {
-            oss << " | W_pawn=" << p.w_pawn_structure 
+            oss << " | Personality=" << p.current_personality 
+                << " AutoLoad=" << (p.personality_auto_load ? "1" : "0")
+                << " W_pawn=" << p.w_pawn_structure 
                 << " W_act=" << p.w_piece_activity 
                 << " W_king=" << p.w_king_safety 
                 << " W_init=" << p.w_initiative 
