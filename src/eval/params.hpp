@@ -29,10 +29,15 @@ struct Params {
     
     // === KEY MICRO TERMS ===
     int outpost_bonus = 100;            // 0-200
+    int bad_bishop_penalty = 100;       // 0-200
+    int space_concept_weight = 100;      // 0-200
     int bishop_pair_bonus = 100;       // 0-200
     int rook_open_file_bonus = 100;   // 0-200
     int passed_pawn_bonus = 100;       // 0-200
     int pawn_shield_penalty = 100;     // 0-200
+    
+    // === KNOWLEDGE CONCEPTS ===
+    int w_knowledge_concepts = 100;     // 0-200, master weight for all concepts
     
     // === SEARCH / HUMANISATION ===
     int candidate_margin_cp = 200;      // 0-400

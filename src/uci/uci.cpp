@@ -123,9 +123,12 @@ void cmd_uci() {
     std::cout << "option name W_KingSafety type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name W_Initiative type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name W_Imbalance type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name W_KnowledgeConcepts type spin default 100 min 0 max 200" << std::endl;
     
     // === KEY MICRO TERMS ===
     std::cout << "option name OutpostBonus type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name BadBishopPenalty type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name SpaceConceptWeight type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name BishopPairBonus type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name RookOpenFileBonus type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name PassedPawnBonus type spin default 100 min 0 max 200" << std::endl;

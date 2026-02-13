@@ -44,6 +44,12 @@ bool set_param(const std::string& name, const std::string& value) {
         // Key Micro Terms
         else if (name == "OutpostBonus") {
             global_params.outpost_bonus = std::stoi(value);
+        } else if (name == "BadBishopPenalty") {
+            global_params.bad_bishop_penalty = std::stoi(value);
+        } else if (name == "SpaceConceptWeight") {
+            global_params.space_concept_weight = std::stoi(value);
+        } else if (name == "W_KnowledgeConcepts") {
+            global_params.w_knowledge_concepts = std::stoi(value);
         } else if (name == "BishopPairBonus") {
             global_params.bishop_pair_bonus = std::stoi(value);
         } else if (name == "RookOpenFileBonus") {
@@ -98,6 +104,9 @@ std::string dump_params() {
     oss << "W_Initiative=" << p.w_initiative << std::endl;
     oss << "W_Imbalance=" << p.w_imbalance << std::endl;
     oss << "OutpostBonus=" << p.outpost_bonus << std::endl;
+    oss << "BadBishopPenalty=" << p.bad_bishop_penalty << std::endl;
+    oss << "SpaceConceptWeight=" << p.space_concept_weight << std::endl;
+    oss << "W_KnowledgeConcepts=" << p.w_knowledge_concepts << std::endl;
     oss << "BishopPairBonus=" << p.bishop_pair_bonus << std::endl;
     oss << "RookOpenFileBonus=" << p.rook_open_file_bonus << std::endl;
     oss << "PassedPawnBonus=" << p.passed_pawn_bonus << std::endl;

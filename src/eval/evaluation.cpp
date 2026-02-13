@@ -11,6 +11,7 @@
 #include "imbalance.hpp"
 #include "initiative.hpp"
 #include "params.hpp"
+#include "knowledge.hpp"
 #include "../utils/board.hpp"
 #include <iostream>
 #include <sstream>
@@ -41,6 +42,7 @@ bool is_opening(const Board& board) {
 
 ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     ScoreBreakdown bd;
+    const auto& p = get_params();
     
     // Evaluate each layer
     bd.material = evaluate_material(board);
@@ -49,10 +51,9 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     bd.king_safety = evaluate_king_safety(board);
     bd.imbalance = evaluate_imbalance(board);
     bd.initiative = evaluate_initiative(board);
+    bd.knowledge = evaluate_knowledge(board, p);
     
     // Apply params weights
-    const auto& p = get_params();
-    
     // Scale factor (100 = 1.0)
     float scale = p.w_imbalance / 100.0f;
     
@@ -63,6 +64,7 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     score += static_cast<int>(bd.imbalance * scale);  // ImbalanceScale applies here
     score += static_cast<int>(bd.king_safety * p.w_king_safety / 100.0f);
     score += static_cast<int>(bd.initiative * p.w_initiative / 100.0f);
+    score += bd.knowledge;  // Already weighted internally
     
     // Tempo
     if (board.side_to_move == WHITE) score += 10;
@@ -161,6 +163,7 @@ int evaluate_at_root(const Board& board) {
             << " king=" << bd.king_safety 
             << " imbalance=" << bd.imbalance 
             << " init=" << bd.initiative 
+            << " knowledge=" << bd.knowledge
             << " total=" << bd.total;
         
         // Optionally include params in trace
@@ -170,6 +173,7 @@ int evaluate_at_root(const Board& board) {
                 << " W_king=" << p.w_king_safety 
                 << " W_init=" << p.w_initiative 
                 << " W_imb=" << p.w_imbalance 
+                << " W_know=" << p.w_knowledge_concepts
                 << " ImbScale=" << p.imbalance_scale;
         }
         

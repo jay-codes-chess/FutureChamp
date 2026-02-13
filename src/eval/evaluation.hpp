@@ -42,6 +42,7 @@ struct ScoreBreakdown {
     int king_safety = 0;
     int imbalance = 0;
     int initiative = 0;
+    int knowledge = 0;
     int total = 0;
 };
 
