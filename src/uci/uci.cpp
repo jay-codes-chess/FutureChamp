@@ -364,7 +364,7 @@ void cmd_go(const std::vector<std::string>& tokens) {
 
 
 void cmd_setoption(const std::vector<std::string>& tokens) {
-    if (tokens.size() < 4) return;
+    if (tokens.size() < 3) return;
     
     std::string name, value;
     bool in_name = false, in_value = false;
@@ -375,7 +375,14 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
         } else if (tokens[i] == "value") {
             in_name = false; in_value = true;
         } else if (in_name) {
-            name += tokens[i] + " ";
+            // Check if this token looks like a value (for bool/spin options without "value" keyword)
+            if (tokens[i] == "true" || tokens[i] == "false" || 
+                (tokens[i][0] >= '0' && tokens[i][0] <= '9')) {
+                // This is the value, not part of the name
+                value = tokens[i];
+            } else {
+                name += tokens[i] + " ";
+            }
         } else if (in_value) {
             value += tokens[i] + " ";
         }

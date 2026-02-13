@@ -1,0 +1,7 @@
+uci
+setoption name DebugEvalTrace true
+isready
+ucinewgame
+position startpos
+eval
+quit
