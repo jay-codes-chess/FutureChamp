@@ -375,10 +375,10 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
         } else if (tokens[i] == "value") {
             in_name = false; in_value = true;
         } else if (in_name) {
-            // Check if this token looks like a value (for bool/spin options without "value" keyword)
-            if (tokens[i] == "true" || tokens[i] == "false" || 
-                (tokens[i][0] >= '0' && tokens[i][0] <= '9')) {
-                // This is the value, not part of the name
+            // Collect name tokens until we hit "value" or a standalone true/false
+            // For check options without "value" keyword, last token might be true/false
+            if (i == tokens.size() - 1 && (tokens[i] == "true" || tokens[i] == "false")) {
+                // This is the value for a check option without "value" keyword
                 value = tokens[i];
             } else {
                 name += tokens[i] + " ";

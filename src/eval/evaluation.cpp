@@ -66,19 +66,6 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     
     bd.total = score;
     
-    // Debug output
-    if (debug_trace_enabled) {
-        std::ostringstream oss;
-        oss << "EVAL material=" << bd.material 
-            << " pawns=" << bd.pawn_structure 
-            << " activity=" << bd.piece_activity 
-            << " king=" << bd.king_safety 
-            << " imbalance=" << bd.imbalance 
-            << " init=" << bd.initiative 
-            << " total=" << bd.total;
-        std::cout << "info string " << oss.str() << std::endl;
-    }
-    
     return bd;
 }
 
@@ -91,6 +78,12 @@ int evaluate(const Board& board) {
 int evaluate(const std::string& fen) {
     Board board;
     if (!fen.empty()) board.set_from_fen(fen);
+    
+    // If debug trace is enabled, print breakdown for UCI "eval" command
+    if (debug_trace_enabled) {
+        return evaluate_at_root(board);
+    }
+    
     return evaluate(board);
 }
 
@@ -149,5 +142,25 @@ std::string get_style_name() { return current_style; }
 
 void set_debug_trace(bool enabled) { debug_trace_enabled = enabled; }
 bool get_debug_trace() { return debug_trace_enabled; }
+
+// Evaluate at root with trace output (for search to call at root)
+int evaluate_at_root(const Board& board) {
+    ScoreBreakdown bd = evaluate_with_breakdown(board);
+    
+    // Print trace if enabled
+    if (debug_trace_enabled) {
+        std::ostringstream oss;
+        oss << "EVAL material=" << bd.material 
+            << " pawns=" << bd.pawn_structure 
+            << " activity=" << bd.piece_activity 
+            << " king=" << bd.king_safety 
+            << " imbalance=" << bd.imbalance 
+            << " init=" << bd.initiative 
+            << " total=" << bd.total;
+        std::cout << "info string " << oss.str() << std::endl;
+    }
+    
+    return bd.total;
+}
 
 } // namespace Evaluation

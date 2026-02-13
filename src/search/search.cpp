@@ -1155,6 +1155,11 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
     result.nodes = nodes_searched;
     result.time_ms = get_elapsed_ms();
     
+    // Output root eval trace if enabled
+    if (Evaluation::get_debug_trace()) {
+        Evaluation::evaluate_at_root(board);
+    }
+    
     return result;
 }
 

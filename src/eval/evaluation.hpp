@@ -112,6 +112,9 @@ std::string get_style_name();
 void set_debug_trace(bool enabled);
 bool get_debug_trace();
 
+// Evaluate at root with trace output (called from search)
+int evaluate_at_root(const Board& board);
+
 } // namespace Evaluation
 
 #endif // EVALUATION_HPP
