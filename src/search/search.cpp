@@ -12,7 +12,7 @@
 
 #include "search.hpp"
 #include "../utils/board.hpp"
-#include "../evaluation/evaluation.hpp"
+#include "../eval/evaluation.hpp"
 #include <iostream>
 #include <chrono>
 #include <algorithm>

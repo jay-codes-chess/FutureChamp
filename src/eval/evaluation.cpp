@@ -1,0 +1,153 @@
+/**
+ * Human Chess Engine - Evaluation Function
+ * Modular layered architecture
+ */
+
+#include "evaluation.hpp"
+#include "material.hpp"
+#include "pawn_structure.hpp"
+#include "piece_activity.hpp"
+#include "king_safety.hpp"
+#include "imbalance.hpp"
+#include "initiative.hpp"
+#include "../utils/board.hpp"
+#include <iostream>
+#include <sstream>
+
+namespace Evaluation {
+
+static StyleWeights current_weights;
+static std::string current_style = "classical";
+static bool debug_trace_enabled = false;
+
+// Forward declarations for internal helpers
+bool is_opening(const Board& board) {
+    int total_material = 0;
+    for (int sq = 0; sq < 64; ++sq) {
+        int type = board.piece_at(sq);
+        if (type == PAWN) total_material += 100;
+        else if (type == KNIGHT) total_material += 320;
+        else if (type == BISHOP) total_material += 330;
+        else if (type == ROOK) total_material += 500;
+        else if (type == QUEEN) total_material += 900;
+    }
+    return total_material > 4000;
+}
+
+// ──────────────────────────────────────────────
+//   Public API
+// ──────────────────────────────────────────────
+
+ScoreBreakdown evaluate_with_breakdown(const Board& board) {
+    ScoreBreakdown bd;
+    
+    // Evaluate each layer
+    bd.material = evaluate_material(board);
+    bd.pawn_structure = evaluate_pawn_structure(board);
+    bd.piece_activity = evaluate_piece_activity(board);
+    bd.king_safety = evaluate_king_safety(board);
+    bd.imbalance = evaluate_imbalance(board);
+    bd.initiative = evaluate_initiative(board);
+    
+    // Apply style weights
+    const auto& w = current_weights;
+    
+    int score = 0;
+    score += static_cast<int>(bd.material * w.material);
+    score += static_cast<int>(bd.piece_activity * w.piece_activity);
+    score += static_cast<int>(bd.pawn_structure * w.pawn_structure);
+    score += static_cast<int>(bd.imbalance * w.space);  // space weight
+    score += static_cast<int>(bd.king_safety * w.king_safety);
+    score += static_cast<int>(bd.initiative * w.initiative);
+    
+    // Tempo
+    if (board.side_to_move == WHITE) score += 10;
+    else score -= 10;
+    
+    bd.total = score;
+    
+    // Debug output
+    if (debug_trace_enabled) {
+        std::ostringstream oss;
+        oss << "EVAL material=" << bd.material 
+            << " pawns=" << bd.pawn_structure 
+            << " activity=" << bd.piece_activity 
+            << " king=" << bd.king_safety 
+            << " imbalance=" << bd.imbalance 
+            << " init=" << bd.initiative 
+            << " total=" << bd.total;
+        std::cout << "info string " << oss.str() << std::endl;
+    }
+    
+    return bd;
+}
+
+// Efficient version that takes a Board directly (for search)
+int evaluate(const Board& board) {
+    return evaluate_with_breakdown(board).total;
+}
+
+// FEN string version (for UCI commands)
+int evaluate(const std::string& fen) {
+    Board board;
+    if (!fen.empty()) board.set_from_fen(fen);
+    return evaluate(board);
+}
+
+Imbalances analyze_imbalances(const std::string& fen) {
+    Board board;
+    if (!fen.empty()) board.set_from_fen(fen);
+    
+    Imbalances imb{};
+    imb.material_diff = evaluate_material(board);
+    imb.white_king_safety = evaluate_king_safety(board);
+    imb.black_king_safety = -evaluate_king_safety(board);  // Flip for black
+    
+    // Simple versions - would need full refactor for complete data
+    imb.white_space = 0.0f;
+    imb.black_space = 0.0f;
+    
+    return imb;
+}
+
+VerbalExplanation explain(int score, const std::string& fen) {
+    VerbalExplanation exp;
+    Imbalances imb = analyze_imbalances(fen);
+    
+    if (imb.material_diff > 120)
+        exp.move_reasons.emplace_back("White has a clear material advantage");
+    else if (imb.material_diff < -120)
+        exp.move_reasons.emplace_back("Black has a clear material advantage");
+    
+    if (score > 40) exp.move_reasons.emplace_back("White has the better position overall");
+    if (score < -40) exp.move_reasons.emplace_back("Black has the better position overall");
+    
+    return exp;
+}
+
+void initialize() { 
+    set_style("classical"); 
+}
+
+void set_style(const std::string& style_name) {
+    current_style = style_name;
+    
+    if (style_name == "classical") {
+        current_weights = {
+            1.0f, 0.3f, 0.8f, 0.1f, 0.4f, 1.0f, 0.2f, 0.4f
+        };
+    } else if (style_name == "attacking") {
+        current_weights = {0.8f, 0.8f, 0.4f, 0.4f, 1.0f, 0.3f, 0.2f, 0.2f};
+    } else if (style_name == "positional") {
+        current_weights = {1.0f, 0.6f, 0.8f, 0.6f, 0.3f, 0.5f, 0.4f, 0.6f};
+    } else {
+        current_weights = {1.0f, 0.5f, 0.5f, 0.3f, 0.4f, 0.6f, 0.3f, 0.4f};
+    }
+}
+
+std::string get_style_name() { return current_style; }
+
+void set_debug_trace(bool enabled) { debug_trace_enabled = enabled; }
+bool get_debug_trace() { return debug_trace_enabled; }
+
+} // namespace Evaluation

@@ -1,13 +1,13 @@
 /**
  * Evaluation Function - Silman-Based Human-Like Assessment
  * 
- * Evaluates positions using human concepts:
- * - Material (but not king safety)
- * - Piece activity and harmony
- * - Pawn structure (weaknesses, passed pawns)
- * - Space advantages
- * - Initiative and dynamics
- * - Strategic imbalances
+ * Modular layered architecture:
+ * - Material
+ * - Pawn Structure
+ * - Piece Activity
+ * - King Safety
+ * - Imbalance
+ * - Initiative
  * 
  * Reference: Jeremy Silman "How to Reassess Your Chess"
  */
@@ -18,18 +18,32 @@
 #include <string>
 #include <vector>
 
-// Forward declaration: Tell the compiler Board exists without including board.hpp
+// Forward declaration
 struct Board;
 
 namespace Evaluation {
 
-// Piece values (centipawns)
-constexpr int PAWN_VALUE = 100;
-constexpr int KNIGHT_VALUE = 320;
-constexpr int BISHOP_VALUE = 330;
-constexpr int ROOK_VALUE = 500;
-constexpr int QUEEN_VALUE = 900;
-constexpr int KING_VALUE = 0;  // King safety handled separately
+// Forward declarations for layer functions
+int evaluate_material(const Board& board);
+int evaluate_pawn_structure(const Board& board);
+int evaluate_piece_activity(const Board& board);
+int evaluate_king_safety(const Board& board);
+int evaluate_imbalance(const Board& board);
+int evaluate_initiative(const Board& board);
+
+// Check if position is in opening phase
+bool is_opening(const Board& board);
+
+// Score breakdown for debugging/trace
+struct ScoreBreakdown {
+    int material = 0;
+    int pawn_structure = 0;
+    int piece_activity = 0;
+    int king_safety = 0;
+    int imbalance = 0;
+    int initiative = 0;
+    int total = 0;
+};
 
 // Evaluation weights for different styles
 struct StyleWeights {
@@ -45,34 +59,21 @@ struct StyleWeights {
 
 // Imbalance analysis structure
 struct Imbalances {
-    // Material
     int material_diff = 0;
-    
-    // Minor piece evaluation
     bool white_has_better_minor = false;
     bool black_has_better_minor = false;
-    
-    // Pawn structure
     int white_weak_pawns = 0;
     int black_weak_pawns = 0;
     bool white_has_passed_pawn = false;
     bool black_has_passed_pawn = false;
     bool white_has_isolated_pawn = false;
     bool black_has_isolated_pawn = false;
-    
-    // Space
     float white_space = 0.0f;
     float black_space = 0.0f;
-    
-    // Initiative
     bool white_has_initiative = false;
     bool black_has_initiative = false;
-    
-    // Development (early game)
     int white_development_score = 0;
     int black_development_score = 0;
-    
-    // King safety
     int white_king_safety = 0;
     int black_king_safety = 0;
 };
@@ -92,7 +93,8 @@ int evaluate(const std::string& fen = "");
 // Efficient version that takes a Board directly (for use in search)
 int evaluate(const Board& board);
 
-bool is_opening(const Board& board);
+// Evaluate with full breakdown (for debugging)
+ScoreBreakdown evaluate_with_breakdown(const Board& board);
 
 // Analyze imbalances
 Imbalances analyze_imbalances(const std::string& fen = "");
@@ -105,6 +107,10 @@ void set_style(const std::string& style_name);
 
 // Get current style name
 std::string get_style_name();
+
+// Debug trace control
+void set_debug_trace(bool enabled);
+bool get_debug_trace();
 
 } // namespace Evaluation
 

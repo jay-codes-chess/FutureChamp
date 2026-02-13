@@ -13,7 +13,7 @@
 #include <chrono>
 #include "uci/uci.hpp"
 #include "search/search.hpp"
-#include "evaluation/evaluation.hpp"
+#include "eval/evaluation.hpp"
 
 int main(int argc, char* argv[]) {
     std::cout << "FutureChamp" << std::endl;

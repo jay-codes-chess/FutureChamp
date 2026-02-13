@@ -4,7 +4,7 @@
  */
 
 #include "uci.hpp"
-#include "../evaluation/evaluation.hpp"
+#include "../eval/evaluation.hpp"
 #include "../search/search.hpp"
 #include "../utils/board.hpp"
 #include <iostream>
@@ -106,6 +106,7 @@ void cmd_uci() {
     std::cout << "option name UseMCTS type check default true" << std::endl;
     std::cout << "option name VerbalPV type check default false" << std::endl;
     std::cout << "option name ShowImbalances type check default false" << std::endl;
+    std::cout << "option name DebugEvalTrace type check default false" << std::endl;
     
     std::cout << "uciok" << std::endl;
 }
@@ -400,6 +401,9 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
         options.verbal_pv = (value == "true");
     } else if (name == "ShowImbalances") {
         options.show_imbalances = (value == "true");
+    } else if (name == "DebugEvalTrace") {
+        options.debug_eval_trace = (value == "true");
+        Evaluation::set_debug_trace(options.debug_eval_trace);
     }
 }
 

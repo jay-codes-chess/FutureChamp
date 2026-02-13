@@ -25,6 +25,9 @@ struct Options {
     // Teaching options
     bool verbal_pv = false;
     bool show_imbalances = false;
+    
+    // Debug options
+    bool debug_eval_trace = false;
 };
 
 extern Options options;
