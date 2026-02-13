@@ -1,0 +1,25 @@
+# Build artifacts
+build/
+*.o
+*.a
+*.so
+*.dylib
+human-chess-engine
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.orig
+*.rej
+
+# Logs
+*.log
