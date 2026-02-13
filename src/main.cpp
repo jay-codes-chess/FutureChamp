@@ -16,7 +16,7 @@
 #include "evaluation/evaluation.hpp"
 
 int main(int argc, char* argv[]) {
-    std::cout << "Human Chess Engine " << std::endl;
+    std::cout << "FutureChamp" << std::endl;
     std::cout << "A chess engine that thinks like a coach." << std::endl;
     std::cout << std::endl;
     
