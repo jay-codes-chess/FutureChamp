@@ -10,6 +10,7 @@
 #include "king_safety.hpp"
 #include "imbalance.hpp"
 #include "initiative.hpp"
+#include "params.hpp"
 #include "../utils/board.hpp"
 #include <iostream>
 #include <sstream>
@@ -49,16 +50,19 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     bd.imbalance = evaluate_imbalance(board);
     bd.initiative = evaluate_initiative(board);
     
-    // Apply style weights
-    const auto& w = current_weights;
+    // Apply params weights
+    const auto& p = get_params();
+    
+    // Scale factor (100 = 1.0)
+    float scale = p.w_imbalance / 100.0f;
     
     int score = 0;
-    score += static_cast<int>(bd.material * w.material);
-    score += static_cast<int>(bd.piece_activity * w.piece_activity);
-    score += static_cast<int>(bd.pawn_structure * w.pawn_structure);
-    score += static_cast<int>(bd.imbalance * w.space);  // space weight
-    score += static_cast<int>(bd.king_safety * w.king_safety);
-    score += static_cast<int>(bd.initiative * w.initiative);
+    score += bd.material;  // Material is absolute
+    score += static_cast<int>(bd.piece_activity * p.w_piece_activity / 100.0f);
+    score += static_cast<int>(bd.pawn_structure * p.w_pawn_structure / 100.0f);
+    score += static_cast<int>(bd.imbalance * scale);  // ImbalanceScale applies here
+    score += static_cast<int>(bd.king_safety * p.w_king_safety / 100.0f);
+    score += static_cast<int>(bd.initiative * p.w_initiative / 100.0f);
     
     // Tempo
     if (board.side_to_move == WHITE) score += 10;
@@ -149,6 +153,7 @@ int evaluate_at_root(const Board& board) {
     
     // Print trace if enabled
     if (debug_trace_enabled) {
+        const auto& p = get_params();
         std::ostringstream oss;
         oss << "EVAL material=" << bd.material 
             << " pawns=" << bd.pawn_structure 
@@ -157,6 +162,17 @@ int evaluate_at_root(const Board& board) {
             << " imbalance=" << bd.imbalance 
             << " init=" << bd.initiative 
             << " total=" << bd.total;
+        
+        // Optionally include params in trace
+        if (p.debug_trace_with_params) {
+            oss << " | W_pawn=" << p.w_pawn_structure 
+                << " W_act=" << p.w_piece_activity 
+                << " W_king=" << p.w_king_safety 
+                << " W_init=" << p.w_initiative 
+                << " W_imb=" << p.w_imbalance 
+                << " ImbScale=" << p.imbalance_scale;
+        }
+        
         std::cout << "info string " << oss.str() << std::endl;
     }
     

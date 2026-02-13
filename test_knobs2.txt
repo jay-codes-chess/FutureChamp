@@ -1,0 +1,9 @@
+uci
+setoption name W_PawnStructure value 150
+setoption name DebugEvalTrace value true
+setoption name DebugTraceWithParams value true
+isready
+ucinewgame
+position startpos
+eval
+quit

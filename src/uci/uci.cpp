@@ -5,6 +5,7 @@
 
 #include "uci.hpp"
 #include "../eval/evaluation.hpp"
+#include "../eval/params.hpp"
 #include "../search/search.hpp"
 #include "../utils/board.hpp"
 #include <iostream>
@@ -107,6 +108,37 @@ void cmd_uci() {
     std::cout << "option name VerbalPV type check default false" << std::endl;
     std::cout << "option name ShowImbalances type check default false" << std::endl;
     std::cout << "option name DebugEvalTrace type check default false" << std::endl;
+    std::cout << "option name DebugTraceWithParams type check default false" << std::endl;
+    
+    // === CORE MATERIAL / IMBALANCE ===
+    std::cout << "option name MaterialPriority type spin default 100 min 1 max 100" << std::endl;
+    std::cout << "option name ImbalanceScale type spin default 100 min 30 max 150" << std::endl;
+    std::cout << "option name KnightValueBias type spin default 0 min -50 max 50" << std::endl;
+    std::cout << "option name BishopValueBias type spin default 0 min -50 max 50" << std::endl;
+    std::cout << "option name ExchangeSacrificeSensitivity type spin default 100 min 0 max 200" << std::endl;
+    
+    // === EVAL LAYER WEIGHTS ===
+    std::cout << "option name W_PawnStructure type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name W_PieceActivity type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name W_KingSafety type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name W_Initiative type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name W_Imbalance type spin default 100 min 0 max 200" << std::endl;
+    
+    // === KEY MICRO TERMS ===
+    std::cout << "option name OutpostBonus type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name BishopPairBonus type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name RookOpenFileBonus type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name PassedPawnBonus type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name PawnShieldPenalty type spin default 100 min 0 max 200" << std::endl;
+    
+    // === SEARCH / HUMANISATION ===
+    std::cout << "option name CandidateMarginCp type spin default 200 min 0 max 400" << std::endl;
+    std::cout << "option name CandidateMovesMax type spin default 10 min 1 max 30" << std::endl;
+    std::cout << "option name HumanEnable type check default true" << std::endl;
+    std::cout << "option name HumanTemperature type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name HumanNoiseCp type spin default 0 min 0 max 50" << std::endl;
+    std::cout << "option name HumanBlunderRate type spin default 0 min 0 max 1000" << std::endl;
+    std::cout << "option name RandomSeed type spin default 0 min 0 max 2147483647" << std::endl;
     
     std::cout << "uciok" << std::endl;
 }
@@ -411,6 +443,12 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
     } else if (name == "DebugEvalTrace") {
         options.debug_eval_trace = (value == "true");
         Evaluation::set_debug_trace(options.debug_eval_trace);
+    } else if (name == "DebugTraceWithParams") {
+        Evaluation::set_param("DebugTraceWithParams", value);
+    } 
+    // Pass all other params to Evaluation params system
+    else if (Evaluation::set_param(name, value)) {
+        // Param was set successfully
     }
 }
 
