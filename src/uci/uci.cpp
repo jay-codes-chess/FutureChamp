@@ -127,12 +127,15 @@ void cmd_uci() {
     
     // === KEY MICRO TERMS ===
     std::cout << "option name OutpostBonus type spin default 100 min 0 max 200" << std::endl;
-    std::cout << "option name BadBishopPenalty type spin default 100 min 0 max 200" << std::endl;
-    std::cout << "option name SpaceConceptWeight type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name BishopPairBonus type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name RookOpenFileBonus type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name PassedPawnBonus type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name PawnShieldPenalty type spin default 100 min 0 max 200" << std::endl;
+    
+    // === KNOWLEDGE CONCEPT WEIGHTS ===
+    std::cout << "option name ConceptOutpostWeight type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name ConceptBadBishopWeight type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name ConceptSpaceWeight type spin default 100 min 0 max 200" << std::endl;
     
     // === SEARCH / HUMANISATION ===
     std::cout << "option name CandidateMarginCp type spin default 200 min 0 max 400" << std::endl;

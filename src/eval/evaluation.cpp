@@ -174,6 +174,9 @@ int evaluate_at_root(const Board& board) {
                 << " W_init=" << p.w_initiative 
                 << " W_imb=" << p.w_imbalance 
                 << " W_know=" << p.w_knowledge_concepts
+                << " C_outpost=" << p.concept_outpost_weight
+                << " C_badbis=" << p.concept_bad_bishop_weight
+                << " C_space=" << p.concept_space_weight
                 << " ImbScale=" << p.imbalance_scale;
         }
         

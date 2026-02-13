@@ -62,7 +62,7 @@ int eval_bad_bishop(const Board& board, const Params& params) {
         }
     }
     
-    return score * params.bad_bishop_penalty / 100;
+    return score * params.concept_bad_bishop_weight / 100;
 }
 
 // Good Knight vs Bad Bishop: Closed pawn structures favor knights
@@ -189,7 +189,7 @@ int eval_space_advantage(const Board& board, const Params& params) {
     if (diff > 0) score = std::min(diff * 5, 40);   // +5 to +40 cp
     else score = std::max(diff * 5, -40);         // -5 to -40 cp
     
-    return score * params.space_concept_weight / 100;
+    return score * params.concept_space_weight / 100;
 }
 
 // Knight Outpost: Knight on square not attackable by enemy pawn, supported by own pawn
@@ -231,7 +231,7 @@ int eval_knight_outpost(const Board& board, const Params& params) {
         }
     }
     
-    return score * params.outpost_bonus / 100;
+    return score * params.concept_outpost_weight / 100;
 }
 
 // Main knowledge evaluation - combines all concepts
