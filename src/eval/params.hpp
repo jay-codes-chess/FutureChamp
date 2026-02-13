@@ -60,8 +60,13 @@ struct Params {
 // Get reference to global params
 Params& get_params();
 
-// Load personality from JSON file
-bool load_personality(const std::string& name);
+// Set executable path for relative file resolution
+void set_exe_path(const std::string& path);
+std::string get_exe_path();
+std::string get_file_path(const std::string& relative_path);
+
+// Load personality from JSON file (verbose = print summary)
+bool load_personality(const std::string& name, bool verbose = true);
 
 // Save current params to JSON file
 bool save_personality(const std::string& name);

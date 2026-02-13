@@ -7,8 +7,20 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include <algorithm>
 
 namespace Evaluation {
+
+// Store executable directory for relative path resolution
+static std::string g_exe_path;
+
+void set_exe_path(const std::string& path) {
+    g_exe_path = path;
+}
+
+std::string get_exe_path() {
+    return g_exe_path;
+}
 
 // Global params instance
 static Params global_params;
@@ -17,15 +29,48 @@ Params& get_params() {
     return global_params;
 }
 
+// Get full path for a file (relative to exe or absolute)
+std::string get_file_path(const std::string& relative_path) {
+    if (!g_exe_path.empty()) {
+        // Try exe directory first
+        std::string exe_dir = g_exe_path;
+        size_t last_slash = exe_dir.find_last_of("/\\");
+        if (last_slash != std::string::npos) {
+            exe_dir = exe_dir.substr(0, last_slash);
+        }
+        std::string full_path = exe_dir + "/" + relative_path;
+        std::ifstream test(full_path);
+        if (test.is_open()) {
+            test.close();
+            return full_path;
+        }
+    }
+    // Fall back to current working directory
+    return relative_path;
+}
+
+// Clamp value to min/max range
+int clamp_value(int value, int min_val, int max_val) {
+    return std::max(min_val, std::min(max_val, value));
+}
+
 // Load personality from JSON file
-bool load_personality(const std::string& name) {
-    std::string filename = "./personalities/" + name + ".json";
+bool load_personality(const std::string& name, bool verbose) {
+    std::string filename = get_file_path("./personalities/" + name + ".json");
     std::ifstream file(filename);
+    
+    if (!file.is_open()) {
+        // Try alternative path
+        filename = get_file_path("personalities/" + name + ".json");
+        file.open(filename);
+    }
     
     if (!file.is_open()) {
         std::cerr << "Failed to open personality file: " << filename << std::endl;
         return false;
     }
+    
+    int applied = 0, ignored = 0;
     
     // Simple JSON parsing (key: value pairs)
     std::string line;
@@ -46,17 +91,24 @@ bool load_personality(const std::string& name) {
         value.erase(0, value.find_first_not_of(" \""));
         value.erase(value.find_last_not_of(" \"") + 1);
         
-        // Handle boolean values
-        if (value == "true") {
-            set_param(key, "true");
-        } else if (value == "false") {
-            set_param(key, "false");
+        // Try to set param (returns false if unknown key)
+        if (set_param(key, value)) {
+            applied++;
         } else {
-            set_param(key, value);
+            ignored++;
+            if (verbose) {
+                std::cout << "info string Warning: Unknown personality key: " << key << std::endl;
+            }
         }
     }
     
     global_params.current_personality = name;
+    
+    if (verbose) {
+        std::cout << "info string Loaded personality=" << name 
+                  << " (" << applied << " options applied, " << ignored << " ignored)" << std::endl;
+    }
+    
     return true;
 }
 

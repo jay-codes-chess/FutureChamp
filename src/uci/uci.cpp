@@ -461,8 +461,8 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
         Evaluation::get_params().personality_auto_load = (value == "true");
     } else if (name == "Personality") {
         if (Evaluation::get_params().personality_auto_load) {
-            if (Evaluation::load_personality(value)) {
-                std::cout << "info string Loaded personality: " << value << std::endl;
+            if (Evaluation::load_personality(value, true)) {
+                // Summary already printed in load_personality
             } else {
                 std::cout << "info string Failed to load personality: " << value << std::endl;
             }

@@ -43,14 +43,21 @@ std::string process_fen(const std::string& fen) {
 void run_evalfile_mode(const std::string& filename, const std::string& personality) {
     // Load personality if specified
     if (!personality.empty()) {
-        if (Evaluation::load_personality(personality)) {
-            std::cout << "Loaded personality: " << personality << std::endl;
+        if (Evaluation::load_personality(personality, true)) {
+            // Summary already printed
         } else {
             std::cout << "Failed to load personality: " << personality << std::endl;
         }
     }
     
-    std::ifstream file(filename);
+    // Resolve file path
+    std::string resolved_path = Evaluation::get_file_path(filename);
+    std::ifstream file(resolved_path);
+    if (!file.is_open()) {
+        // Try alternative path
+        resolved_path = filename;
+        file.open(resolved_path);
+    }
     if (!file.is_open()) {
         std::cerr << "Failed to open: " << filename << std::endl;
         return;
@@ -77,6 +84,11 @@ int main(int argc, char* argv[]) {
     std::cout << "FutureChamp" << std::endl;
     std::cout << "A chess engine that thinks like a coach." << std::endl;
     std::cout << std::endl;
+    
+    // Set executable path for relative file resolution
+    if (argc > 0) {
+        Evaluation::set_exe_path(argv[0]);
+    }
     
     // Check for eval file mode
     std::string evalfile;
