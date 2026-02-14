@@ -25,8 +25,9 @@ void cmd_evaluate();
 void loop(int argc, char* argv[]) {
     std::string cmd;
     
-    std::cout << "FutureChamp" << std::endl;
-    std::cout << "Type 'uci' to enter UCI mode, 'quit' to exit." << std::endl;
+    // Don't print welcome message in UCI mode - it breaks protocol
+    // std::cout << "FutureChamp" << std::endl;
+    // std::cout << "Type 'uci' to enter UCI mode, 'quit' to exit." << std::endl;
     
     while (std::getline(std::cin, cmd)) {
         std::istringstream ss(cmd);

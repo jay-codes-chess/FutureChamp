@@ -394,9 +394,10 @@ void run_expectations_mode(const std::string& personalities_list, const std::str
 }
 
 int main(int argc, char* argv[]) {
-    std::cout << "FutureChamp" << std::endl;
-    std::cout << "A chess engine that thinks like a coach." << std::endl;
-    std::cout << std::endl;
+    // Don't print welcome message - let UCI mode handle any output
+    // std::cout << "FutureChamp" << std::endl;
+    // std::cout << "A chess engine that thinks like a coach." << std::endl;
+    // std::cout << std::endl;
     
     // Set executable path for relative file resolution
     if (argc > 0) {
