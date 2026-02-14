@@ -1416,14 +1416,77 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
     // **IMPROVED: Ensure we search at least to depth 3**
     int min_depth = 3;
     
+    // Aspiration window: previous score for window calculation
+    int prevScore = 0;
+    
     // Iterative deepening: search depth 1, 2, 3... up to max_search_depth
     for (int depth = 1; depth <= max_search_depth; depth++) {
         if (should_stop()) break;
         
         search_depth = depth;
         
-        // Search at this depth
-        int score = alpha_beta(board, depth, -MATE_SCORE, MATE_SCORE, board.side_to_move, true);
+        // **Aspiration windows**: use previous iteration's score to bound search
+        int alpha = -MATE_SCORE;
+        int beta = MATE_SCORE;
+        int window = 30;  // Initial window in centipawns
+        int retries = 0;
+        int finalAlpha = alpha, finalBeta = beta;
+        std::string failType = "none";
+        
+        if (depth >= 2 && UCI::options.debug_search_trace) {
+            // Use aspiration window based on previous score
+            alpha = prevScore - window;
+            beta = prevScore + window;
+            finalAlpha = alpha;
+            finalBeta = beta;
+        }
+        
+        int score;
+        
+        // Aspiration window retry loop (max 4 tries)
+        while (retries < 4) {
+            score = alpha_beta(board, depth, alpha, beta, board.side_to_move, true);
+            
+            if (score <= alpha) {
+                // Fail low - widen window down
+                failType = "low";
+                window *= 2;
+                alpha = prevScore - window;
+                retries++;
+                finalAlpha = alpha;
+            }
+            else if (score >= beta) {
+                // Fail high - widen window up
+                failType = "high";
+                window *= 2;
+                beta = prevScore + window;
+                retries++;
+                finalBeta = beta;
+            }
+            else {
+                // Success - score within window
+                break;
+            }
+        }
+        
+        if (retries >= 4) {
+            // Failed all attempts - search with full window
+            score = alpha_beta(board, depth, -MATE_SCORE, MATE_SCORE, board.side_to_move, true);
+            failType = "none";
+        }
+        
+        // Update previous score for next iteration
+        prevScore = score;
+        
+        // Print aspiration window diagnostics
+        if (UCI::options.debug_search_trace) {
+            std::cout << "info string ASP depth=" << depth 
+                      << " prev=" << (retries < 4 ? prevScore : score)
+                      << " win=" << window 
+                      << " retries=" << retries 
+                      << " finalWindow=" << finalAlpha << "," << finalBeta
+                      << " fail=" << failType << std::endl;
+        }
         
         result.score = score;
         result.depth = depth;
