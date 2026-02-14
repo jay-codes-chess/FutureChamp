@@ -20,6 +20,8 @@
 #include <algorithm>
 #include <random>
 #include <limits>
+#include <unordered_map>
+#include <string>
 
 namespace Search {
 
@@ -1359,6 +1361,17 @@ uint64_t perft_recursive(Board& board, int depth) {
     return nodes;
 }
 
+// Reference perft values from known correct implementations
+// Perft 3 from start position: 8902
+// These are the per-move counts at depth 3 (perft 2 from each child position)
+static const std::unordered_map<std::string, int> perft3_reference = {
+    {"a2a3", 380}, {"a2a4", 420}, {"b2b3", 420}, {"b2b4", 421},
+    {"c2c3", 420}, {"c2c4", 441}, {"d2d3", 539}, {"d2d4", 560},
+    {"e2e3", 580}, {"e2e4", 579}, {"f2f3", 380}, {"f2f4", 401},
+    {"g2g3", 420}, {"g2g4", 421}, {"h2h3", 380}, {"h2h4", 420},
+    {"b1a3", 400}, {"b1c3", 440}, {"g1f3", 440}, {"g1h3", 400}
+};
+
 void perft(Board& board, int depth) {
     std::cout << "Perft to depth " << depth << std::endl;
     std::cout << "Position: " << board.get_fen() << std::endl;
@@ -1400,7 +1413,22 @@ void perft(Board& board, int depth) {
         }
         
         std::string move_uci = Bitboards::move_to_uci(move);
-        std::cout << move_uci << std::string(12 - move_uci.length(), ' ') << "| " << count << std::endl;
+        
+        // Compare with reference if available (depth 3 = perft2 from each child)
+        auto it = perft3_reference.find(move_uci);
+        if (it != perft3_reference.end()) {
+            if (depth == 3) {
+                if (count != it->second) {
+                    std::cout << move_uci << std::string(12 - move_uci.length(), ' ') << "| " << count << " *** MISMATCH (expected " << it->second << ") ***" << std::endl;
+                } else {
+                    std::cout << move_uci << std::string(12 - move_uci.length(), ' ') << "| " << count << " (ok)" << std::endl;
+                }
+            } else {
+                std::cout << move_uci << std::string(12 - move_uci.length(), ' ') << "| " << count << std::endl;
+            }
+        } else {
+            std::cout << move_uci << std::string(12 - move_uci.length(), ' ') << "| " << count << std::endl;
+        }
         
         total_nodes += count;
     }

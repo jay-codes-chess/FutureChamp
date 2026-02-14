@@ -429,10 +429,18 @@ int main(int argc, char* argv[]) {
             if (i + 1 < argc && argv[i+1][0] >= '0' && argv[i+1][0] <= '9') {
                 depth = std::stoi(argv[++i]);
             }
-            if (i + 1 < argc && argv[i+1][0] != '-') {
-                // Check if it looks like a FEN (contains /)
-                if (std::string(argv[i+1]).find('/') != std::string::npos) {
-                    fen = argv[++i];
+            // Collect remaining args as FEN (FEN has spaces so we need to join them)
+            if (i + 1 < argc) {
+                std::vector<std::string> fen_parts;
+                for (int j = i + 1; j < argc; j++) {
+                    fen_parts.push_back(argv[j]);
+                }
+                if (!fen_parts.empty()) {
+                    fen = fen_parts[0];
+                    for (size_t j = 1; j < fen_parts.size(); j++) {
+                        fen += " " + fen_parts[j];
+                    }
+                    i = argc - 1; // Skip all FEN parts
                 }
             }
             Board b;
