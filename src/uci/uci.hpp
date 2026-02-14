@@ -28,6 +28,7 @@ struct Options {
     
     // Debug options
     bool debug_eval_trace = false;
+    bool debug_search_trace = false;
 };
 
 extern Options options;

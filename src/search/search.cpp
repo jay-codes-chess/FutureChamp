@@ -13,6 +13,7 @@
 #include "search.hpp"
 #include "human_selection.hpp"
 #include "../utils/board.hpp"
+#include "../movegen.hpp"
 #include "../eval/evaluation.hpp"
 #include "../eval/params.hpp"
 #include "../uci/uci.hpp"
@@ -433,8 +434,14 @@ Board make_move(const Board& board, int move) {
 
 // Generate pseudo-legal moves
 std::vector<int> generate_moves(const Board& board) {
-	
-    return board.generate_moves();
+    MoveList _m; 
+    ::generate_moves(board, _m);  // Call the free function in movegen.cpp
+    std::vector<int> result;
+    result.reserve(_m.count);
+    for (int i = 0; i < _m.count; i++) {
+        result.push_back(_m.moves[i]);
+    }
+    return result;
 }
 
 // Check if move is legal (king not in check after move)
@@ -683,7 +690,7 @@ void order_moves(std::vector<int>& moves, Board& board, int tt_move, int depth) 
 
 // Generate candidate moves (Kotov method)
 std::vector<int> generate_candidates(const Board& board) {
-    auto all_moves = generate_moves(board);
+    MoveList all_moves; generate_moves(board, all_moves);
     std::vector<int> legal_moves;
     
     #ifdef DEBUG
@@ -743,7 +750,7 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
     
     if (in_check) {
         // Generate ALL legal moves (evasions)
-        auto all_moves = generate_moves(board);
+        MoveList all_moves; generate_moves(board, all_moves);
         for (int move : all_moves) {
             if (is_legal(board, move)) {
                 moves.push_back(move);
@@ -752,7 +759,7 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
         }
     } else {
         // Generate only tactical moves: captures and promotions
-        auto all_moves = generate_moves(board);
+        MoveList all_moves; generate_moves(board, all_moves);
         
         for (int move : all_moves) {
             if (!is_legal(board, move)) continue;
@@ -861,7 +868,7 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
     // **FIXED**: Validate TT move against ALL legal moves, not just candidates
     if (tt_hit && tt_move != 0) {
         bool tt_move_is_legal = false;
-        auto all_legal_moves = generate_moves(board);
+        MoveList all_legal_moves; generate_moves(board, all_legal_moves);
         for (int legal_move : all_legal_moves) {
             if (is_legal(board, legal_move) && legal_move == tt_move) {
                 tt_move_is_legal = true;
@@ -1029,7 +1036,7 @@ std::vector<std::string> extract_pv(Board board, int max_depth) {
         if (move == 0) break;
         
         // **FIXED**: Verify move is legal for THIS position
-        auto legal_moves = board.generate_moves();
+        MoveList legal_moves; generate_moves(board, legal_moves);
         bool found = false;
         for (int legal_move : legal_moves) {
             if (legal_move == move && is_legal(board, legal_move)) {
@@ -1140,7 +1147,7 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
             tt_candidate = transposition_table[idx].move;
             
             // Validate move is legal
-            auto legal_moves = board.generate_moves();
+            MoveList legal_moves; generate_moves(board, legal_moves);
             bool found = false;
             for (int legal_move : legal_moves) {
                 if (is_legal(board, legal_move) && legal_move == tt_candidate) {
@@ -1161,7 +1168,7 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
             }
         } else if (result.best_move == 0) {
             // No TT move, find any legal move
-            auto legal_moves = board.generate_moves();
+            MoveList legal_moves; generate_moves(board, legal_moves);
             for (int legal_move : legal_moves) {
                 if (is_legal(board, legal_move)) {
                     result.best_move = legal_move;
@@ -1174,7 +1181,7 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
 		if (result.best_move != 0) {
     // Validate the move is actually legal
     bool legal = false;
-    auto all_moves = board.generate_moves();
+    MoveList all_moves; generate_moves(board, all_moves);
     for (int legal_move : all_moves) {
         if (is_legal(board, legal_move) && legal_move == result.best_move) {
             legal = true;
@@ -1285,7 +1292,7 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
             if (human_move != 0) {
                 // CRITICAL: Verify the chosen move is LEGAL in current position
                 bool move_is_legal = false;
-                auto all_moves = board.generate_moves();
+                MoveList all_moves; generate_moves(board, all_moves);
                 for (int m : all_moves) {
                     if (m == human_move && is_legal(board, m)) {
                         move_is_legal = true;
@@ -1320,7 +1327,7 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
     // FINAL SAFETY CHECK: Verify best_move is legal before returning
     if (result.best_move != 0) {
         bool best_is_legal = false;
-        auto all_moves = board.generate_moves();
+        MoveList all_moves; generate_moves(board, all_moves);
         for (int m : all_moves) {
             if (m == result.best_move && is_legal(board, m)) {
                 best_is_legal = true;
@@ -1360,7 +1367,7 @@ std::string apply_uci_move(const std::string& fen, const std::string& uci_move) 
     board.set_from_fen(fen);
     
     // Generate all moves
-    auto all_moves = board.generate_moves();
+    MoveList all_moves; generate_moves(board, all_moves);
     
     // Filter to legal moves AND convert to UCI strings at the same time
     std::vector<std::pair<int, std::string>> legal_moves_with_uci;
@@ -1423,7 +1430,7 @@ void perft_divide(Board& board, int depth) {
     std::cout << "Position: " << board.get_fen() << std::endl;
     std::cout << std::endl;
     
-    auto moves = board.generate_moves();
+    MoveList moves; generate_moves(board, moves);
     
     uint64_t total = 0;
     for (int move : moves) {
@@ -1451,7 +1458,7 @@ uint64_t perft_recursive(Board& board, int depth) {
     }
     
     uint64_t nodes = 0;
-    auto moves = board.generate_moves();
+    MoveList moves; generate_moves(board, moves);
     
     for (int move : moves) {
         // Check if move is LEGAL before recursing
@@ -1519,7 +1526,7 @@ void perft(Board& board, int depth) {
     auto start = std::chrono::high_resolution_clock::now();
     
     uint64_t total_nodes = 0;
-    auto moves = board.generate_moves();
+    MoveList moves; generate_moves(board, moves);
     
     // First, print perft 1 for each move
     std::cout << "Move        | Count     | %" << std::endl;

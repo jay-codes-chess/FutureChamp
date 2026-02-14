@@ -1,0 +1,8 @@
+CXX = g++
+CXXFLAGS = -O2 -DNDEBUG -std=c++17 -static
+TARGET = FutureChamp.exe
+SOURCES = src/main.cpp src/eval/evaluation.cpp src/eval/imbalance.cpp src/eval/initiative.cpp src/eval/king_safety.cpp src/eval/knowledge.cpp src/eval/material.cpp src/eval/params.cpp src/eval/pawn_structure.cpp src/eval/piece_activity.cpp src/search/human_selection.cpp src/search/search.cpp src/uci/uci.cpp src/utils/board.cpp
+LDFLAGS = -lws2_32
+
+all:
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SOURCES) $(LDFLAGS)
