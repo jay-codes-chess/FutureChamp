@@ -11,11 +11,44 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <fstream>
+#include <mutex>
+#include <atomic>
+
+// UCI I/O logging - file only, not stdout/stderr
+static std::ofstream uci_log;
+static std::mutex log_mutex;
+static bool logging_initialized = false;
+
+static void init_logging() {
+    if (!logging_initialized) {
+        uci_log.open("uci_io.log", std::ios::app);
+        logging_initialized = true;
+    }
+}
+
+static void log_in(const std::string& line) {
+    init_logging();
+    std::lock_guard<std::mutex> lock(log_mutex);
+    if (uci_log.is_open()) {
+        uci_log << "<< " << line << std::endl;
+        uci_log.flush();
+    }
+}
+
+static void log_out(const std::string& line) {
+    init_logging();
+    std::lock_guard<std::mutex> lock(log_mutex);
+    if (uci_log.is_open()) {
+        uci_log << ">> " << line << std::endl;
+        uci_log.flush();
+    }
+}
 
 namespace UCI {
 
 Options options;
-static std::string current_position = "";
+static std::string current_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 // Forward declarations
 void cmd_display();
@@ -30,6 +63,8 @@ void loop(int argc, char* argv[]) {
     // std::cout << "Type 'uci' to enter UCI mode, 'quit' to exit." << std::endl;
     
     while (std::getline(std::cin, cmd)) {
+        log_in(cmd);  // Log every input line
+        
         std::istringstream ss(cmd);
         std::string token;
         ss >> token;
@@ -155,7 +190,7 @@ void cmd_uci() {
     std::cout << "option name CandidateMarginCp type spin default 200 min 0 max 400" << std::endl;
     std::cout << "option name CandidateMovesMax type spin default 10 min 1 max 30" << std::endl;
     std::cout << "option name HumanEnable type check default true" << std::endl;
-    std::cout << "option name HumanSelect type check default true" << std::endl;
+    std::cout << "option name HumanSelect type check default false" << std::endl;
     std::cout << "option name HumanTemperature type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name HumanNoiseCp type spin default 0 min 0 max 50" << std::endl;
     std::cout << "option name HumanBlunderRate type spin default 0 min 0 max 1000" << std::endl;
@@ -173,10 +208,14 @@ void cmd_uci() {
     std::cout << "option name DebugHumanPick type check default false" << std::endl;
     
     std::cout << "uciok" << std::endl;
+    std::cout.flush();
+    log_out("uciok");
 }
 
 void cmd_is_ready() {
     std::cout << "readyok" << std::endl;
+    std::cout.flush();
+    log_out("readyok");
 }
 
 void cmd_position(const std::vector<std::string>& tokens) {
@@ -309,10 +348,10 @@ void cmd_go(const std::vector<std::string>& tokens) {
             if (movetime > 30000) movetime = 30000; // Maximum 30 seconds
             
         } else {
-            movetime = 5000;  // Default 5 seconds if no time info
+            movetime = 1000;  // Default 1 second if no time info (tournament-safe)
         }
     } else if (movetime == -1) {
-        movetime = 60000;  // Infinite search with 60s limit
+        movetime = 10000;  // Infinite search with 10s limit
     }
     
     // Perform search
@@ -422,7 +461,10 @@ void cmd_go(const std::vector<std::string>& tokens) {
     }
     
     // **CRITICAL: Output the bestmove command**
-    std::cout << "bestmove " << best_move_uci << std::endl;
+    std::string bestmove_line = "bestmove " + best_move_uci;
+    std::cout << bestmove_line << std::endl;
+    std::cout.flush();
+    log_out(bestmove_line);
 }
 
 

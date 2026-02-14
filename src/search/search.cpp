@@ -1145,6 +1145,7 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
                   << " nps " << (elapsed > 0 ? (nodes_searched * 1000 / elapsed) : 0)
                   << " pv " << pv_str
                   << std::endl;
+        std::cout.flush();
         
         // **NEW: Don't stop too early in opening**
         // In opening (first 5 moves), search to at least depth 4

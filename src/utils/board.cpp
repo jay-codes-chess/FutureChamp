@@ -439,12 +439,9 @@ std::vector<int> Board::generate_moves() const {
     
     // 6. King moves - WITH OPTIMIZED CASTLING
     uint64_t kings = pieces[KING] & colors[side_to_move];
-    std::cerr << "DEBUG: kings bitboard = " << std::hex << kings << std::dec << std::endl;
     while (kings) {
         int sq = Bitboards::pop_lsb(kings);
-        std::cerr << "DEBUG: king at sq " << sq << std::endl;
         uint64_t attacks = Bitboards::king_attacks(sq);
-        std::cerr << "DEBUG: attacks = " << std::hex << attacks << std::dec << std::endl;
         
         // Filter out squares occupied by our pieces
         attacks &= ~our_pieces;
