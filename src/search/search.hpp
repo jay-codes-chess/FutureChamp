@@ -32,6 +32,7 @@ struct SearchResult {
 void initialize();
 void perft(Board& board, int depth);
 void perft_divide(Board& board, int depth);
+bool is_legal(const Board& board, int move);
 
 // Set search parameters
 void set_threads(int n);

@@ -489,6 +489,21 @@ int main(int argc, char* argv[]) {
             }
             Board b;
             b.set_from_fen(fen);
+            // Print all legal moves
+            auto all_moves = b.generate_moves();
+            std::cout << "All generated moves: " << all_moves.size() << std::endl;
+            for (int m : all_moves) {
+                std::cout << Bitboards::move_to_uci(m) << " ";
+            }
+            std::cout << std::endl;
+            // Now check legal moves
+            std::cout << "Legal moves:" << std::endl;
+            for (int m : all_moves) {
+                if (Search::is_legal(b, m)) {
+                    std::cout << Bitboards::move_to_uci(m) << " ";
+                }
+            }
+            std::cout << std::endl;
             Search::perft_divide(b, 2);
             return 0;
         }

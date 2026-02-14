@@ -1378,6 +1378,10 @@ uint64_t perft_recursive(Board& board, int depth) {
             continue;
         }
         
+        // DEBUG: Snapshot board state before make_move
+        std::string fen_before = board.get_fen();
+        uint64_t hash_before = board.hash;
+        
         // Make move
         Board temp = make_move(board, move);
         
@@ -1392,7 +1396,17 @@ uint64_t perft_recursive(Board& board, int depth) {
         }
         if (!white_king_found || !black_king_found) {
             std::cerr << "ERROR: King missing after move " << Bitboards::move_to_uci(move) << std::endl;
-            std::cerr << "FEN: " << temp.get_fen() << std::endl;
+            std::cerr << "FEN before: " << fen_before << std::endl;
+            std::cerr << "FEN after: " << temp.get_fen() << std::endl;
+        }
+        
+        // DEBUG: Undo move and verify state restored
+        // Find reverse move (this is approximate - we just check state)
+        // Actually, let's just check that temp side_to_move is correct
+        if (temp.side_to_move == board.side_to_move) {
+            std::cerr << "ERROR: Side to move not switched after move " << Bitboards::move_to_uci(move) << std::endl;
+            std::cerr << "FEN before: " << fen_before << std::endl;
+            std::cerr << "FEN after: " << temp.get_fen() << std::endl;
         }
         
         if (depth > 1) {

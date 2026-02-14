@@ -439,9 +439,12 @@ std::vector<int> Board::generate_moves() const {
     
     // 6. King moves - WITH OPTIMIZED CASTLING
     uint64_t kings = pieces[KING] & colors[side_to_move];
+    std::cerr << "DEBUG: kings bitboard = " << std::hex << kings << std::dec << std::endl;
     while (kings) {
         int sq = Bitboards::pop_lsb(kings);
+        std::cerr << "DEBUG: king at sq " << sq << std::endl;
         uint64_t attacks = Bitboards::king_attacks(sq);
+        std::cerr << "DEBUG: attacks = " << std::hex << attacks << std::dec << std::endl;
         
         // Filter out squares occupied by our pieces
         attacks &= ~our_pieces;
@@ -557,7 +560,7 @@ uint64_t knight_attacks(int square) {
 uint64_t king_attacks(int square) {
     static const uint64_t table[64] = {
         0x0000000000000302ULL, 0x0000000000000507ULL, 0x0000000000000A0EULL, 0x000000000000141CULL,
-        0x0000000000002838ULL, 0x0000000000005070ULL, 0x000000000000A0E0ULL, 0x00000000000040C0ULL,
+        0x0000000000003828ULL, 0x0000000000007050ULL, 0x000000000000E0A0ULL, 0x000000000000C040ULL,
         0x0000000000030203ULL, 0x0000000000070507ULL, 0x00000000000E0A0EULL, 0x00000000001C141CULL,
         0x0000000000382838ULL, 0x0000000000705070ULL, 0x0000000000E0A0E0ULL, 0x0000000000C040C0ULL,
         0x0000000003020300ULL, 0x0000000007050700ULL, 0x000000000E0A0E00ULL, 0x000000001C141C00ULL,
