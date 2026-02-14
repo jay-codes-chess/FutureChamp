@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include "../utils/board.hpp"
 
 namespace Search {
 
@@ -29,6 +30,7 @@ struct SearchResult {
 
 // Initialize search (creates transposition table)
 void initialize();
+void perft(Board& board, int depth);
 
 // Set search parameters
 void set_threads(int n);

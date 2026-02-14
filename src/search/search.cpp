@@ -1200,8 +1200,61 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
             );
             
             if (human_move != 0) {
-                // Use human-selected move but keep PV from best move
-                result.best_move = human_move;
+                // CRITICAL: Verify the chosen move is LEGAL in current position
+                bool move_is_legal = false;
+                auto all_moves = board.generate_moves();
+                for (int m : all_moves) {
+                    if (m == human_move && is_legal(board, m)) {
+                        move_is_legal = true;
+                        break;
+                    }
+                }
+                
+                if (!move_is_legal) {
+                    // CRITICAL ERROR: Illegal move selected - abort!
+                    std::cerr << "FATAL: Illegal move selected by human selection!" << std::endl;
+                    std::cerr << "FEN: " << board.get_fen() << std::endl;
+                    std::cerr << "Move: " << Bitboards::move_to_uci(human_move) << std::endl;
+                    std::cerr << "Legal moves:";
+                    for (int m : all_moves) {
+                        if (is_legal(board, m)) {
+                            std::cerr << " " << Bitboards::move_to_uci(m);
+                        }
+                    }
+                    std::cerr << std::endl;
+                    // Fall back to best move from search
+                    human_move = 0;
+                }
+                
+                if (human_move != 0) {
+                    // Use human-selected move but keep PV from best move
+                    result.best_move = human_move;
+                }
+            }
+        }
+    }
+    
+    // FINAL SAFETY CHECK: Verify best_move is legal before returning
+    if (result.best_move != 0) {
+        bool best_is_legal = false;
+        auto all_moves = board.generate_moves();
+        for (int m : all_moves) {
+            if (m == result.best_move && is_legal(board, m)) {
+                best_is_legal = true;
+                break;
+            }
+        }
+        
+        if (!best_is_legal) {
+            std::cerr << "FATAL: Engine returned illegal best_move!" << std::endl;
+            std::cerr << "FEN: " << board.get_fen() << std::endl;
+            std::cerr << "Move: " << Bitboards::move_to_uci(result.best_move) << std::endl;
+            // Find a legal move as fallback
+            for (int m : all_moves) {
+                if (is_legal(board, m)) {
+                    result.best_move = m;
+                    break;
+                }
             }
         }
     }
@@ -1276,6 +1329,77 @@ void set_use_mcts(bool use) {
 
 void set_depth_limit(int depth) {
     max_depth = depth;
+}
+
+// Perft (performance test) - counts leaf nodes at given depth
+uint64_t perft_recursive(Board& board, int depth) {
+    if (depth == 0) {
+        return 1;
+    }
+    
+    uint64_t nodes = 0;
+    auto moves = board.generate_moves();
+    
+    for (int move : moves) {
+        // Check if move is LEGAL before recursing
+        if (!is_legal(board, move)) {
+            continue;
+        }
+        
+        // Make move
+        Board temp = make_move(board, move);
+        
+        if (depth > 1) {
+            nodes += perft_recursive(temp, depth - 1);
+        } else {
+            nodes++;
+        }
+    }
+    
+    return nodes;
+}
+
+void perft(Board& board, int depth) {
+    std::cout << "Perft to depth " << depth << std::endl;
+    std::cout << "Position: " << board.get_fen() << std::endl;
+    std::cout << std::endl;
+    
+    auto start = std::chrono::high_resolution_clock::now();
+    
+    uint64_t total_nodes = 0;
+    auto moves = board.generate_moves();
+    
+    // First, print perft 1 for each move
+    std::cout << "Move           | Count    | %" << std::endl;
+    std::cout << "---------------|----------|----" << std::endl;
+    
+    for (int move : moves) {
+        // Check if move is LEGAL before counting
+        if (!is_legal(board, move)) {
+            continue;
+        }
+        
+        uint64_t count = 1;
+        if (depth > 1) {
+            Board temp = make_move(board, move);
+            count = perft_recursive(temp, depth - 1);
+        }
+        
+        std::string move_uci = Bitboards::move_to_uci(move);
+        double pct = 0;
+        std::cout << move_uci << std::string(14 - move_uci.length(), ' ') << "| " << count;
+        
+        total_nodes += count;
+    }
+    
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    
+    std::cout << std::endl;
+    std::cout << "---------------|----------|----" << std::endl;
+    std::cout << "Total nodes:   " << total_nodes << std::endl;
+    std::cout << "Time:          " << duration.count() << " ms" << std::endl;
+    std::cout << "Nodes/second:  " << (duration.count() > 0 ? total_nodes / (duration.count() / 1000.0) : 0) << std::endl;
 }
 
 } // namespace Search

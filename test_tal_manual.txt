@@ -1,0 +1,12 @@
+uci
+setoption name HumanSelect value true
+setoption name HumanHardFloorCp value 120
+setoption name HumanTopKOverride value 3
+setoption name HumanOpeningSanity value 120
+setoption name CandidateMarginCp value 160
+setoption name HumanTemperature value 110
+setoption name RandomSeed value 42
+setoption name Personality value tal
+position startpos
+go depth 6
+quit

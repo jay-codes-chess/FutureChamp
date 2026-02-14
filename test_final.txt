@@ -1,0 +1,10 @@
+uci
+setoption name RandomSeed value 1234
+setoption name HumanSelect value true
+setoption name DebugHumanPick value true
+setoption name HumanHardFloorCp value 120
+setoption name HumanOpeningSanity value 120
+setoption name HumanTopKOverride value 3
+position startpos
+go depth 6
+quit

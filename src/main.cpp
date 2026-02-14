@@ -422,6 +422,20 @@ int main(int argc, char* argv[]) {
             expectations = argv[++i];
         } else if (arg == "--personalities" && i + 1 < argc) {
             personalities = argv[++i];
+        } else if (arg == "perft" || arg == "--perft") {
+            // Perft mode: FutureChamp.exe perft <depth> [fen]
+            int depth = 4;
+            std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+            if (i + 1 < argc) {
+                depth = std::stoi(argv[++i]);
+            }
+            if (i + 1 < argc && argv[i+1][0] != '-') {
+                fen = argv[++i];
+            }
+            Board b;
+            b.set_from_fen(fen);
+            Search::perft(b, depth);
+            return 0;
         }
     }
     
