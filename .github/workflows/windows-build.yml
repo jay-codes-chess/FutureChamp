@@ -14,10 +14,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install MSYS2 (mingw-w64 toolchain)
+      - name: Setup MSYS2 (MINGW64)
         uses: msys2/setup-msys2@v2
         with:
           update: true
+          msystem: MINGW64
           install: >-
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-make
@@ -25,9 +26,9 @@ jobs:
       - name: Build (Makefile) - Release
         shell: msys2 {0}
         run: |
+          set -euxo pipefail
           cd "$GITHUB_WORKSPACE"
-          make clean || true
-          make CXXFLAGS="-O2 -std=c++17 -DNDEBUG"
+          make -j2 RELEASE=1 || make -j2
 
       - name: Locate FutureChamp.exe
         shell: pwsh
