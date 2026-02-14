@@ -45,6 +45,7 @@ struct Params {
     int concept_color_complex_weight = 100;  // 0-200
     int concept_pawn_lever_weight = 100;      // 0-200
     int concept_initiative_persist_weight = 100; // 0-200
+    int initiative_dominance = 100;           // 0-200 - amplifies initiative term
     
     // === SEARCH / HUMANISATION ===
     int candidate_margin_cp = 200;      // 0-400

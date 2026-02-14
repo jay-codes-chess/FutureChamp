@@ -201,6 +201,18 @@ bool set_param(const std::string& name, const std::string& value) {
         } else if (name == "ConceptSpaceWeight") {
             global_params.concept_space_weight = std::stoi(value);
         }
+        // Master Concepts
+        else if (name == "ConceptExchangeSacWeight") {
+            global_params.concept_exchange_sac_weight = std::stoi(value);
+        } else if (name == "ConceptColorComplexWeight") {
+            global_params.concept_color_complex_weight = std::stoi(value);
+        } else if (name == "ConceptPawnLeverWeight") {
+            global_params.concept_pawn_lever_weight = std::stoi(value);
+        } else if (name == "ConceptInitiativePersistWeight") {
+            global_params.concept_initiative_persist_weight = std::stoi(value);
+        } else if (name == "InitiativeDominance") {
+            global_params.initiative_dominance = std::stoi(value);
+        }
         // Search / Humanisation
         else if (name == "CandidateMarginCp") {
             global_params.candidate_margin_cp = std::stoi(value);

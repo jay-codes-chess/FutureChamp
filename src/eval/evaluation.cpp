@@ -69,7 +69,12 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     score += static_cast<int>(bd.pawn_structure * p.w_pawn_structure / 100.0f);
     score += static_cast<int>(bd.imbalance * scale);  // ImbalanceScale applies here
     score += static_cast<int>(bd.king_safety * p.w_king_safety / 100.0f);
-    score += static_cast<int>(bd.initiative * p.w_initiative / 100.0f);
+    // Initiative with dominance multiplier
+    int initiative_score = bd.initiative;
+    if (p.initiative_dominance != 100) {
+        initiative_score = initiative_score * p.initiative_dominance / 100;
+    }
+    score += static_cast<int>(initiative_score * p.w_initiative / 100.0f);
     score += bd.knowledge;  // Already weighted internally
     
     // Tempo
