@@ -1,0 +1,14 @@
+{
+  "exchange_sac_white": {
+    "tal_should_be_higher_by": 10000
+  },
+  "weak_dark_squares": {
+    "tal_should_be_higher_by": 10000
+  },
+  "initiative_white": {
+    "petrosian_should_be_higher_by": 50
+  },
+  "pawn_lever_white": {
+    "petrosian_should_be_higher_by": 100
+  }
+}

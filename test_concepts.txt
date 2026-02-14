@@ -1,0 +1,7 @@
+uci
+setoption name Personality value petrosian
+setoption name DebugEvalTrace value true
+setoption name DebugTraceWithParams value true
+setoption name W_KnowledgeConcepts value 150
+eval
+quit
