@@ -220,6 +220,8 @@ bool set_param(const std::string& name, const std::string& value) {
             global_params.candidate_moves_max = std::stoi(value);
         } else if (name == "HumanEnable") {
             global_params.human_enable = (value == "true");
+        } else if (name == "HumanSelect") {
+            global_params.human_select = (value == "true");
         } else if (name == "HumanTemperature") {
             global_params.human_temperature = std::stoi(value);
         } else if (name == "HumanNoiseCp") {
@@ -228,10 +230,18 @@ bool set_param(const std::string& name, const std::string& value) {
             global_params.human_blunder_rate = std::stoi(value);
         } else if (name == "RandomSeed") {
             global_params.random_seed = std::stoi(value);
+        } else if (name == "RiskAppetite") {
+            global_params.risk_appetite = std::stoi(value);
+        } else if (name == "SacrificeBias") {
+            global_params.sacrifice_bias = std::stoi(value);
+        } else if (name == "SimplicityBias") {
+            global_params.simplicity_bias = std::stoi(value);
         }
         // Debug
         else if (name == "DebugTraceWithParams") {
             global_params.debug_trace_with_params = (value == "true");
+        } else if (name == "DebugHumanPick") {
+            global_params.debug_human_pick = (value == "true");
         }
         else {
             return false;  // Unknown param

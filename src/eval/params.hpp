@@ -51,13 +51,18 @@ struct Params {
     int candidate_margin_cp = 200;      // 0-400
     int candidate_moves_max = 10;       // 1-30
     bool human_enable = true;            // check
+    bool human_select = true;            // check - use human selection at root
     int human_temperature = 100;         // 0-200
     int human_noise_cp = 0;             // 0-50
     int human_blunder_rate = 0;         // 0-1000
     int random_seed = 0;                // 0-2147483647
+    int risk_appetite = 100;            // 0-200 - Tal high, Petrosian low
+    int sacrifice_bias = 100;            // 0-200 - ties to MaterialPriority
+    int simplicity_bias = 100;           // 0-200 - Capa higher
     
     // === DEBUG ===
     bool debug_trace_with_params = false;  // Include params in trace output
+    bool debug_human_pick = false;        // Debug human move selection
     
     // === PERSONALITY ===
     std::string current_personality = "default";  // Current loaded personality

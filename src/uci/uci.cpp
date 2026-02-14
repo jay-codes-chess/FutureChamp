@@ -154,10 +154,17 @@ void cmd_uci() {
     std::cout << "option name CandidateMarginCp type spin default 200 min 0 max 400" << std::endl;
     std::cout << "option name CandidateMovesMax type spin default 10 min 1 max 30" << std::endl;
     std::cout << "option name HumanEnable type check default true" << std::endl;
+    std::cout << "option name HumanSelect type check default true" << std::endl;
     std::cout << "option name HumanTemperature type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name HumanNoiseCp type spin default 0 min 0 max 50" << std::endl;
     std::cout << "option name HumanBlunderRate type spin default 0 min 0 max 1000" << std::endl;
     std::cout << "option name RandomSeed type spin default 0 min 0 max 2147483647" << std::endl;
+    std::cout << "option name RiskAppetite type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name SacrificeBias type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name SimplicityBias type spin default 100 min 0 max 200" << std::endl;
+    
+    // === DEBUG ===
+    std::cout << "option name DebugHumanPick type check default false" << std::endl;
     
     std::cout << "uciok" << std::endl;
 }

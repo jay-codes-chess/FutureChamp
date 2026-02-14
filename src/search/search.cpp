@@ -11,8 +11,10 @@
  */
 
 #include "search.hpp"
+#include "human_selection.hpp"
 #include "../utils/board.hpp"
 #include "../eval/evaluation.hpp"
+#include "../eval/params.hpp"
 #include <iostream>
 #include <chrono>
 #include <algorithm>
@@ -1158,6 +1160,42 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
     // Output root eval trace if enabled
     if (Evaluation::get_debug_trace()) {
         Evaluation::evaluate_at_root(board);
+    }
+    
+    // Apply human selection at root if enabled
+    const auto& params = Evaluation::get_params();
+    if (params.human_select && result.best_move != 0 && !stop_search) {
+        // Collect candidate moves
+        auto candidates = HumanSelection::collect_candidates(
+            &board,
+            params.candidate_margin_cp,
+            params.candidate_moves_max,
+            3  // Shallow search for candidates
+        );
+        
+        if (!candidates.empty() && candidates.size() > 1) {
+            // Get best score from candidates
+            int best_score = candidates[0].score;
+            
+            // Pick human move
+            int human_move = HumanSelection::pick_human_move(
+                &board,
+                candidates,
+                best_score,
+                params.human_temperature,
+                params.human_noise_cp,
+                params.risk_appetite,
+                params.sacrifice_bias,
+                params.simplicity_bias,
+                params.random_seed,
+                params.debug_human_pick
+            );
+            
+            if (human_move != 0) {
+                // Use human-selected move but keep PV from best move
+                result.best_move = human_move;
+            }
+        }
     }
     
     return result;
