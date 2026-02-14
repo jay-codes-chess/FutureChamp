@@ -356,12 +356,13 @@ void initialize() {
     }
     // Initialize history and killer tables
     for (int i = 0; i < 64; i++) {
-        for (int j = 0; j < 2; j++) {
-            killer_moves[i][j] = 0;
-        }
         for (int j = 0; j < 64; j++) {
             history_scores[i][j] = 0;
         }
+    }
+    for (int i = 0; i < 64; i++) {
+        killer_moves[i][0] = 0;
+        killer_moves[i][1] = 0;
     }
 }
 
