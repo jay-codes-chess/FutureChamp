@@ -45,6 +45,217 @@ constexpr int MATE_BOUND = MATE_SCORE - 1000;
 // Position history for repetition detection
 static std::vector<uint64_t> position_history;
 
+// Phase 2B: Delta-based undo (only save what changes)
+// This replaces the full Board copy with minimal state capture
+struct UndoDelta {
+    // What changes in a move:
+    uint64_t pieces_pawn;    // PAWN bitboard changes
+    uint64_t pieces_knight;  // KNIGHT bitboard changes  
+    uint64_t pieces_bishop;  // BISHOP bitboard changes
+    uint64_t pieces_rook;   // ROOK bitboard changes
+    uint64_t pieces_queen;  // QUEEN bitboard changes
+    uint64_t pieces_king;   // KING bitboard changes
+    uint64_t colors_white;  // WHITE color bitboard
+    uint64_t colors_black; // BLACK color bitboard
+    
+    int side_to_move;
+    bool castling[2][2];
+    int en_passant_square;
+    int halfmove_clock;
+    uint64_t hash;
+    
+    // Captured piece info (for restoring)
+    int captured_piece;  // NO_PIECE if no capture
+    int captured_square;
+    
+    // Moved piece info
+    int moved_piece;
+    int from_square;
+    int to_square;
+    int move_flags;
+    int promotion_piece;
+};
+
+inline void save_delta(const Board& b, UndoDelta& u, int move) {
+    u.pieces_pawn = b.pieces[PAWN];
+    u.pieces_knight = b.pieces[KNIGHT];
+    u.pieces_bishop = b.pieces[BISHOP];
+    u.pieces_rook = b.pieces[ROOK];
+    u.pieces_queen = b.pieces[QUEEN];
+    u.pieces_king = b.pieces[KING];
+    u.colors_white = b.colors[WHITE];
+    u.colors_black = b.colors[BLACK];
+    u.side_to_move = b.side_to_move;
+    u.castling[0][0] = b.castling[0][0];
+    u.castling[0][1] = b.castling[0][1];
+    u.castling[1][0] = b.castling[1][0];
+    u.castling[1][1] = b.castling[1][1];
+    u.en_passant_square = b.en_passant_square;
+    u.halfmove_clock = b.halfmove_clock;
+    u.hash = b.hash;
+    
+    int to = Bitboards::move_to(move);
+    u.captured_piece = b.piece_at(to);
+    u.captured_square = to;
+    
+    int from = Bitboards::move_from(move);
+    u.moved_piece = b.piece_at(from);
+    u.from_square = from;
+    u.to_square = to;
+    u.move_flags = Bitboards::move_flags(move);
+    u.promotion_piece = Bitboards::move_promotion(move);
+}
+
+inline void restore_delta(Board& b, const UndoDelta& u) {
+    b.pieces[PAWN] = u.pieces_pawn;
+    b.pieces[KNIGHT] = u.pieces_knight;
+    b.pieces[BISHOP] = u.pieces_bishop;
+    b.pieces[ROOK] = u.pieces_rook;
+    b.pieces[QUEEN] = u.pieces_queen;
+    b.pieces[KING] = u.pieces_king;
+    b.colors[WHITE] = u.colors_white;
+    b.colors[BLACK] = u.colors_black;
+    b.side_to_move = u.side_to_move;
+    b.castling[0][0] = u.castling[0][0];
+    b.castling[0][1] = u.castling[0][1];
+    b.castling[1][0] = u.castling[1][0];
+    b.castling[1][1] = u.castling[1][1];
+    b.en_passant_square = u.en_passant_square;
+    b.halfmove_clock = u.halfmove_clock;
+    b.hash = u.hash;
+}
+
+// In-place make_move: modifies board directly without copying the whole board
+inline void make_move_inplace(Board& b, int move) {
+    int from = Bitboards::move_from(move);
+    int to = Bitboards::move_to(move);
+    int flags = Bitboards::move_flags(move);
+    int promo = Bitboards::move_promotion(move);
+    
+    int piece = b.piece_at(from);
+    int color = b.side_to_move;
+    int captured = b.piece_at(to);
+    
+    b.halfmove_clock++;
+    
+    if (flags == MOVE_CASTLE) {
+        b.remove_piece(from);
+        b.add_piece(to, KING, color);
+        
+        if (to > from) {
+            int rook_from = from + 3;
+            int rook_to = from + 1;
+            b.remove_piece(rook_from);
+            b.add_piece(rook_to, ROOK, color);
+        } else {
+            int rook_from = from - 4;
+            int rook_to = from - 1;
+            b.remove_piece(rook_from);
+            b.add_piece(rook_to, ROOK, color);
+        }
+        
+        b.castling[color][0] = false;
+        b.castling[color][1] = false;
+        b.halfmove_clock = 0;
+    }
+    else if (flags == MOVE_EN_PASSANT) {
+        b.remove_piece(from);
+        b.add_piece(to, PAWN, color);
+        
+        int captured_sq = to + (color == WHITE ? -8 : 8);
+        b.remove_piece(captured_sq);
+        
+        b.en_passant_square = -1;
+        b.halfmove_clock = 0;
+    }
+    else if (flags == MOVE_PROMOTION) {
+        b.remove_piece(from);
+        
+        if (captured != NO_PIECE) {
+            b.remove_piece(to);
+        }
+        
+        int promo_piece = KNIGHT;
+        switch (promo) {
+            case 0: promo_piece = KNIGHT; break;
+            case 1: promo_piece = BISHOP; break;
+            case 2: promo_piece = ROOK; break;
+            case 3: promo_piece = QUEEN; break;
+        }
+        
+        b.add_piece(to, promo_piece, color);
+        b.en_passant_square = -1;
+        b.halfmove_clock = 0;
+    }
+    else {
+        b.remove_piece(from);
+        
+        if (captured != NO_PIECE && captured != KING) {
+            b.remove_piece(to);
+            b.halfmove_clock = 0;
+        }
+        
+        b.add_piece(to, piece, color);
+        
+        if (piece == PAWN) {
+            b.halfmove_clock = 0;
+            
+            int rank_from = Bitboards::rank_of(from);
+            int rank_to = Bitboards::rank_of(to);
+            if (abs(rank_to - rank_from) == 2) {
+                b.en_passant_square = (from + to) / 2;
+            } else {
+                b.en_passant_square = -1;
+            }
+        } else {
+            b.en_passant_square = -1;
+        }
+    }
+    
+    if (piece == KING) {
+        b.castling[color][0] = false;
+        b.castling[color][1] = false;
+    }
+    if (piece == ROOK) {
+        if (from == (color == WHITE ? 0 : 56)) b.castling[color][1] = false;
+        if (from == (color == WHITE ? 7 : 63)) b.castling[color][0] = false;
+    }
+    if (captured == ROOK) {
+        if (to == (color == WHITE ? 0 : 56)) b.castling[1 - color][1] = false;
+        if (to == (color == WHITE ? 7 : 63)) b.castling[1 - color][0] = false;
+    }
+    
+    b.side_to_move = 1 - color;
+    b.compute_hash();
+    
+    if (color == BLACK) {
+        b.fullmove_number++;
+    }
+}
+
+// Phase 2A: Snapshot-based undo (full board copy for undo)
+// struct UndoSnapshot {
+//     Board snapshot;
+// };
+// 
+// inline void save_snapshot(const Board& b, UndoSnapshot& u) {
+//     u.snapshot = b;
+// }
+// 
+// inline void restore_snapshot(Board& b, const UndoSnapshot& u) {
+//     b = u.snapshot;
+// }
+
+// Forward declaration for make_move
+Board make_move(const Board& board, int move);
+
+// Apply move in-place using existing make_move
+inline bool apply_move_inplace(Board& b, int move) {
+    Board nb = make_move(b, move);
+    b = nb;
+    return true;
+}
+
 // Time management
 static std::chrono::steady_clock::time_point start_time;
 static int max_time_ms = 30000;
@@ -824,8 +1035,14 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
             g_diag.qCapturesSearched++;
         }
         
-        Board new_board = make_move(board, move);
-        int score = -quiescence_search(new_board, -beta, -alpha, 1 - color);
+        // Phase 2B: Use delta-based undo instead of Board copy
+        UndoDelta u;
+        save_delta(board, u, move);
+        
+        make_move_inplace(board, move);
+        int score = -quiescence_search(board, -beta, -alpha, 1 - color);
+        
+        restore_delta(board, u);
         
         if (score > alpha) {
             alpha = score;
@@ -961,15 +1178,21 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
     for (int move : moves) {
         if (should_stop()) return 0;
         
-        Board new_board = make_move(board, move);
+        // Phase 2B: Use delta-based undo instead of Board copy
+        UndoDelta u;
+        save_delta(board, u, move);
         
         // Add current position to history for repetition detection
-        position_history.push_back(board.hash);
+        uint64_t current_hash = board.hash;
+        position_history.push_back(current_hash);
         
-        int score = -alpha_beta(new_board, depth - 1, -beta, -alpha, 1 - color, true);
+        make_move_inplace(board, move);
+        int score = -alpha_beta(board, depth - 1, -beta, -alpha, 1 - color, true);
         
         // Remove from history
         position_history.pop_back();
+        
+        restore_delta(board, u);
         
         if (score > best_score) {
             best_score = score;
