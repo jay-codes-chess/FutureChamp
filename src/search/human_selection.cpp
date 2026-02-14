@@ -1,7 +1,7 @@
 /**
  * Human Selection - Implementation
  * 
- * Simplified deterministic version for initial testing
+ * Uses Board copy approach for move validation
  */
 
 #include "human_selection.hpp"
@@ -30,34 +30,7 @@ double seeded_random(int seed) {
     return static_cast<double>(state) / static_cast<double>(m);
 }
 
-// Simple variance score (higher = more tactical)
-int calculate_variance_score(void* board_ptr, int move) {
-    int variance = 0;
-    
-    int to = Bitboards::move_to(move);
-    int flags = Bitboards::move_flags(move);
-    int promo = Bitboards::move_promotion(move);
-    
-    // Capture?
-    if ((move >> 6 & 63) != (move & 63)) {
-        // This is a simplification - we'd need to check actual board
-        variance += 30;
-    }
-    
-    // Promotion
-    if (promo != 0) {
-        variance += 40;
-    }
-    
-    // Castling
-    if (flags == MOVE_CASTLE) {
-        variance += 20;
-    }
-    
-    return variance;
-}
-
-// Collect candidate moves - simplified evaluation version
+// Collect candidate moves - uses evaluation but ensures consistency
 std::vector<CandidateMove> collect_candidates(
     void* board_ptr,
     int candidate_margin_cp,
@@ -70,30 +43,42 @@ std::vector<CandidateMove> collect_candidates(
     // Generate all moves
     auto moves = board->generate_moves();
     
-    // For each legal move, evaluate it using simple material + position
+    // For each legal move, evaluate using the SAME method we'll use for selection
     for (int move : moves) {
-        // Quick check: make a copy and see if king is in check
+        // Make temporary copy using bitboard operations
         Board temp = *board;
         
-        // Try move using bitboard functions
         int from = Bitboards::move_from(move);
         int to = Bitboards::move_to(move);
+        int flags = Bitboards::move_flags(move);
+        int promo = Bitboards::move_promotion(move);
         int piece = board->piece_at(from);
+        int color = board->color_at(from);
         
-        // Skip if no piece on from square
+        // Skip if no piece
         if (piece == 0) continue;
         
         // Make move on temp board
         temp.remove_piece(from);
-        temp.add_piece(to, piece & 7, piece >> 3);
+        temp.add_piece(to, piece & 7, color);
         
-        // Skip if king is in check (likely illegal)
+        // Handle captures (remove captured piece)
+        if (to != from) {
+            int captured_piece = board->piece_at(to);
+            if (captured_piece != 0) {
+                temp.remove_piece(to);
+            }
+        }
+        
+        // Skip if king is in check (illegal)
         if (temp.is_in_check(temp.side_to_move)) {
             continue;
         }
         
-        // Simple evaluation (material + basic position)
+        // CRITICAL: Use the SAME evaluation method that will be used for selection
+        // This ensures consistency between candidate list and chosen move
         int score = Evaluation::evaluate(temp);
+        
         candidates.emplace_back(move, score);
     }
     
@@ -153,7 +138,7 @@ int pick_human_move(
     double total_weight = 0;
     
     for (auto& c : candidates) {
-        // Base weight from score difference
+        // Base weight from score difference (using SAME scores as candidates)
         double score_diff = (c.score - best_score) / 100.0;
         
         // Apply temperature
@@ -200,30 +185,35 @@ int pick_human_move(
                   << " best=" << best_score 
                   << " temp=" << human_temperature 
                   << " margin=" << (best_score - candidates.back().score) << std::endl;
-        for (size_t i = 0; i < std::min(candidates.size(), size_t(5)); i++) {
+        // Print ALL candidates so chosen is always visible
+        for (size_t i = 0; i < candidates.size(); i++) {
             const auto& c = candidates[i];
             std::cerr << "  " << Bitboards::move_to_uci(c.move) << " score=" << c.score 
                       << " prob=" << (c.probability * 100) << "%" << std::endl;
         }
     }
     
-    // Sample using seeded random
+    // Sample using seeded random - ensures reproducibility
     double r = seeded_random(random_seed + 12345);
     double cumulative = 0;
+    int chosen = candidates[0].move;
+    int chosen_score = candidates[0].score;
     
     for (const auto& c : candidates) {
         cumulative += c.probability;
         if (r <= cumulative) {
-            if (debug_output) {
-                std::cerr << "HUMAN_PICK chosen=" << Bitboards::move_to_uci(c.move) 
-                          << " score=" << c.score << std::endl;
-            }
-            return c.move;
+            chosen = c.move;
+            chosen_score = c.score;
+            break;
         }
     }
     
-    // Fallback to best move
-    return candidates[0].move;
+    if (debug_output) {
+        std::cerr << "HUMAN_PICK chosen=" << Bitboards::move_to_uci(chosen) 
+                  << " score=" << chosen_score << std::endl;
+    }
+    
+    return chosen;
 }
 
 } // namespace HumanSelection
