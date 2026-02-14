@@ -1225,8 +1225,34 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
         uint64_t current_hash = board.hash;
         position_history.push_back(current_hash);
         
-        make_move_inplace(board, move);
-        int score = -alpha_beta(board, depth - 1, -beta, -alpha, 1 - color, true);
+        // **LMR**: Late Move Reduction - try reduced depth for late quiet moves
+        int move_idx = &move - &moves[0];
+        int score;
+        
+        // LMR conditions: depth >= 3, not in check, quiet move (not capture), not first 3 moves
+        bool is_quiet = (board.piece_at(Bitboards::move_to(move)) == NO_PIECE && !Bitboards::is_promotion(move));
+        bool lmr_candidate = (depth >= 3 && !in_check && is_quiet && move_idx >= 3);
+        
+        if (lmr_candidate) {
+            // Try reduced depth search
+            int r = 1;  // Simple reduction
+            make_move_inplace(board, move);
+            score = -alpha_beta(board, depth - 1 - r, -beta, -alpha, 1 - color, true);
+            restore_delta(board, u);
+            
+            // If reduced search beat alpha, do full research
+            if (score > alpha) {
+                // Research at full depth
+                make_move_inplace(board, move);
+                score = -alpha_beta(board, depth - 1, -beta, -alpha, 1 - color, true);
+                restore_delta(board, u);
+            }
+        } else {
+            // Normal search
+            make_move_inplace(board, move);
+            score = -alpha_beta(board, depth - 1, -beta, -alpha, 1 - color, true);
+            restore_delta(board, u);
+        }
         
         // Remove from history
         position_history.pop_back();
