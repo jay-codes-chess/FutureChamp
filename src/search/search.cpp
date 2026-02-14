@@ -1333,6 +1333,36 @@ void set_depth_limit(int depth) {
     max_depth = depth;
 }
 
+// Forward declaration
+static uint64_t perft_recursive(Board& board, int depth);
+
+// Perft divide - shows count for each root move
+void perft_divide(Board& board, int depth) {
+    std::cout << "Perft Divide at depth " << depth << std::endl;
+    std::cout << "Position: " << board.get_fen() << std::endl;
+    std::cout << std::endl;
+    
+    auto moves = board.generate_moves();
+    
+    uint64_t total = 0;
+    for (int move : moves) {
+        if (!is_legal(board, move)) {
+            continue;
+        }
+        
+        Board temp = make_move(board, move);
+        uint64_t count = perft_recursive(temp, depth - 1);
+        
+        std::string uci = Bitboards::move_to_uci(move);
+        std::cout << uci << ": " << count << std::endl;
+        
+        total += count;
+    }
+    
+    std::cout << std::endl;
+    std::cout << "Total: " << total << std::endl;
+}
+
 // Perft (performance test) - counts leaf nodes at given depth
 uint64_t perft_recursive(Board& board, int depth) {
     if (depth == 0) {
@@ -1350,6 +1380,20 @@ uint64_t perft_recursive(Board& board, int depth) {
         
         // Make move
         Board temp = make_move(board, move);
+        
+        // DEBUG: Verify board state is valid after make_move
+        // Check king exists for both sides
+        bool white_king_found = false, black_king_found = false;
+        for (int sq = 0; sq < 64; sq++) {
+            if (temp.piece_at(sq) == KING) {
+                if (temp.color_at(sq) == WHITE) white_king_found = true;
+                else black_king_found = true;
+            }
+        }
+        if (!white_king_found || !black_king_found) {
+            std::cerr << "ERROR: King missing after move " << Bitboards::move_to_uci(move) << std::endl;
+            std::cerr << "FEN: " << temp.get_fen() << std::endl;
+        }
         
         if (depth > 1) {
             nodes += perft_recursive(temp, depth - 1);

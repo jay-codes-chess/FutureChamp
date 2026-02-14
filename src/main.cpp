@@ -447,6 +447,50 @@ int main(int argc, char* argv[]) {
             b.set_from_fen(fen);
             Search::perft(b, depth);
             return 0;
+        } else if (arg == "perftdivide" || arg == "--perftdivide") {
+            // Perft divide mode: shows count per root move
+            int depth = 3;
+            std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+            if (i + 1 < argc && argv[i+1][0] >= '0' && argv[i+1][0] <= '9') {
+                depth = std::stoi(argv[++i]);
+            }
+            if (i + 1 < argc) {
+                std::vector<std::string> fen_parts;
+                for (int j = i + 1; j < argc; j++) {
+                    fen_parts.push_back(argv[j]);
+                }
+                if (!fen_parts.empty()) {
+                    fen = fen_parts[0];
+                    for (size_t j = 1; j < fen_parts.size(); j++) {
+                        fen += " " + fen_parts[j];
+                    }
+                    i = argc - 1;
+                }
+            }
+            Board b;
+            b.set_from_fen(fen);
+            Search::perft_divide(b, depth);
+            return 0;
+        } else if (arg == "perft2") {
+            // Perft 2 from a given position - to help isolate bugs
+            // Usage: perft2 <fen>
+            std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+            if (i + 1 < argc) {
+                std::vector<std::string> fen_parts;
+                for (int j = i + 1; j < argc; j++) {
+                    fen_parts.push_back(argv[j]);
+                }
+                if (!fen_parts.empty()) {
+                    fen = fen_parts[0];
+                    for (size_t j = 1; j < fen_parts.size(); j++) {
+                        fen += " " + fen_parts[j];
+                    }
+                }
+            }
+            Board b;
+            b.set_from_fen(fen);
+            Search::perft_divide(b, 2);
+            return 0;
         }
     }
     

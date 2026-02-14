@@ -31,6 +31,7 @@ struct SearchResult {
 // Initialize search (creates transposition table)
 void initialize();
 void perft(Board& board, int depth);
+void perft_divide(Board& board, int depth);
 
 // Set search parameters
 void set_threads(int n);
