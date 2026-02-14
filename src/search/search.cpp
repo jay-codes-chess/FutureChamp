@@ -1112,6 +1112,8 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
         g_diag = SearchDiagnostics{};
         g_diag.rootKeyNonZero = (board.hash != 0);
         g_diag.ttEntries = TT_SIZE;
+        // Record search start time for SPEED line
+        g_diag.searchStartTime = std::chrono::steady_clock::now();
     }
     
     // **IMPROVED: Ensure we search at least to depth 3**

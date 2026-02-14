@@ -13,6 +13,7 @@
 #include <vector>
 #include <fstream>
 #include <mutex>
+#include <chrono>
 #include <atomic>
 
 // UCI I/O logging - file only, not stdout/stderr
@@ -469,6 +470,20 @@ void cmd_go(const std::vector<std::string>& tokens) {
     
     // Output search diagnostics if enabled
     if (UCI::options.debug_search_trace) {
+        // Calculate timing
+        auto endTime = std::chrono::steady_clock::now();
+        auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+            endTime - Search::g_diag.searchStartTime).count();
+        if (elapsedMs < 1) elapsedMs = 1;  // Avoid div0
+        
+        int nps = static_cast<int>((Search::g_diag.nodes * 1000) / elapsedMs);
+        
+        std::cout << "info string SPEED depth=" << result.depth 
+                  << " timeMs=" << elapsedMs 
+                  << " nodes=" << Search::g_diag.nodes 
+                  << " qnodes=" << Search::g_diag.qnodes 
+                  << " nps=" << nps << std::endl;
+        
         int ttHitRate = 0;
         if (Search::g_diag.ttProbes > 0) {
             // Multiply by 10000 to get 2 decimal places (e.g., 0.69% -> 69)

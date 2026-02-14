@@ -13,6 +13,8 @@
 #define SEARCH_HPP
 
 #include <string>
+#include <cstdint>
+#include <chrono>
 #include <vector>
 #include <cstdint>
 #include "../utils/board.hpp"
@@ -35,6 +37,8 @@ struct SearchDiagnostics {
     bool rootKeyNonZero = false;
     uint64_t betaCutoffs = 0;
     uint64_t alphaImproves = 0;
+    std::chrono::steady_clock::time_point searchStartTime;
+    std::chrono::steady_clock::time_point searchEndTime;
 };
 
 // Global diagnostics instance
