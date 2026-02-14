@@ -15,6 +15,7 @@
 #include "../utils/board.hpp"
 #include "../eval/evaluation.hpp"
 #include "../eval/params.hpp"
+#include "../uci/uci.hpp"
 #include <iostream>
 #include <chrono>
 #include <algorithm>
@@ -24,6 +25,9 @@
 #include <string>
 
 namespace Search {
+
+// Search diagnostics
+SearchDiagnostics g_diag;
 
 // Search state
 static bool stop_search = false;
@@ -146,7 +150,14 @@ int tt_index(uint64_t hash) {
 
 // Store in transposition table
 void tt_store(uint64_t hash, int depth, int score, int move, int flag) {
+    g_diag.ttStores++;
     int idx = tt_index(hash);
+    
+    // Count collision if overwriting different key
+    if (transposition_table[idx].hash != 0 && transposition_table[idx].hash != hash) {
+        g_diag.ttCollisions++;
+    }
+    
     // Simple replacement strategy - always replace (could be improved)
     transposition_table[idx].hash = hash;
     transposition_table[idx].depth = depth;
@@ -158,12 +169,20 @@ void tt_store(uint64_t hash, int depth, int score, int move, int flag) {
 // Probe transposition table
 bool tt_probe(uint64_t hash, int depth, int& score, int& move) {
     int idx = tt_index(hash);
+    g_diag.ttProbes++;
+    
+    // Count collision if entry exists but key doesn't match
+    if (transposition_table[idx].hash != 0 && transposition_table[idx].hash != hash) {
+        g_diag.ttCollisions++;
+    }
+    
     // CRITICAL: Verify hash matches exactly to avoid hash collisions
     if (transposition_table[idx].hash == hash && 
         transposition_table[idx].depth >= depth &&
         transposition_table[idx].flag != 0) {  // Ensure entry is valid
         score = transposition_table[idx].score;
         move = transposition_table[idx].move;
+        g_diag.ttHits++;
         return true;
     }
     return false;
@@ -688,45 +707,79 @@ std::vector<int> generate_candidates(const Board& board) {
 }
 
 
-// **ENHANCED**: Quiescence search with better capture ordering using SEE
+// **QSEARCH v2**: Enhanced quiescence search with in-check evasions + capture filtering + delta pruning
 int quiescence_search(Board& board, int alpha, int beta, int color) {
     nodes_searched++;
+    g_diag.qnodes++;
     
-    // Stand-pat evaluation
-    int stand_pat = evaluate_position(board, color);
-    if (stand_pat >= beta) return beta;
-    if (stand_pat > alpha) alpha = stand_pat;
-    
-    // Delta pruning: if we're so far behind that even capturing a queen won't help
-    const int BIG_DELTA = 975;  // Queen value + margin
-    if (stand_pat < alpha - BIG_DELTA) {
-        return alpha;
+    // Check for stop
+    if (should_stop()) {
+        return evaluate_position(board, color);
     }
     
-    // Generate only capture moves and promotions
-    auto all_moves = generate_moves(board);
-    std::vector<int> captures;
+    // Check if in check - MUST generate evasions
+    bool in_check = board.is_in_check(color);
     
-    for (int move : all_moves) {
-        if (!is_legal(board, move)) continue;
+    // Stand-pat evaluation - only valid when NOT in check
+    int stand_pat = evaluate_position(board, color);
+    
+    if (!in_check) {
+        if (stand_pat >= beta) return beta;
+        if (stand_pat > alpha) {
+            alpha = stand_pat;
+            g_diag.alphaImproves++;
+        }
         
-        int to = Bitboards::move_to(move);
-        int captured = board.piece_at(to);
-        
-        // Only include captures and promotions
-        if (captured != NO_PIECE || Bitboards::is_promotion(move)) {
-            // **NEW**: Use SEE to prune bad captures
-         //   int see_score = see(board, move);
-          //  if (see_score < -100) {
-                // Skip obviously bad captures (losing more than a pawn)
-            //    continue;
-         //  }
-            captures.push_back(move);
+        // Delta pruning: if we're so far behind that even capturing a queen won't help
+        const int BIG_DELTA = 975;  // Queen value + margin
+        if (stand_pat < alpha - BIG_DELTA) {
+            g_diag.qDeltaPruned++;
+            return alpha;
         }
     }
     
-    // Order captures using MVV-LVA + SEE
-    std::sort(captures.begin(), captures.end(), [&](int a, int b) {
+    // Generate moves based on whether we're in check
+    std::vector<int> moves;
+    
+    if (in_check) {
+        // Generate ALL legal moves (evasions)
+        auto all_moves = generate_moves(board);
+        for (int move : all_moves) {
+            if (is_legal(board, move)) {
+                moves.push_back(move);
+                g_diag.qEvasions++;
+            }
+        }
+    } else {
+        // Generate only tactical moves: captures and promotions
+        auto all_moves = generate_moves(board);
+        
+        for (int move : all_moves) {
+            if (!is_legal(board, move)) continue;
+            
+            int to = Bitboards::move_to(move);
+            int captured = board.piece_at(to);
+            
+            // Only include captures and promotions
+            if (captured != NO_PIECE || Bitboards::is_promotion(move)) {
+                // **SEE filter**: skip obviously bad captures (losing more than a pawn)
+                int see_score = see(board, move);
+                if (see_score < -100) {
+                    g_diag.qCapturesSkippedSEE++;
+                    continue;  // Skip bad captures
+                }
+                moves.push_back(move);
+            }
+        }
+    }
+    
+    // If no moves (shouldn't happen in legal chess), return eval
+    if (moves.empty()) {
+        return stand_pat;
+    }
+    
+    // Order moves: promotions first, then by MVV-LVA + SEE
+    std::sort(moves.begin(), moves.end(), [&](int a, int b) {
         int from_a = Bitboards::move_from(a);
         int to_a = Bitboards::move_to(a);
         int from_b = Bitboards::move_from(b);
@@ -737,12 +790,15 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
         int piece_b = board.piece_at(from_b);
         int captured_b = board.piece_at(to_b);
         
+        // Promotions get highest bonus
+        bool prom_a = Bitboards::is_promotion(a);
+        bool prom_b = Bitboards::is_promotion(b);
+        if (prom_a && !prom_b) return true;
+        if (!prom_a && prom_b) return false;
+        
+        // MVV-LVA score
         int score_a = get_piece_value(captured_a) * 10 - get_piece_value(piece_a);
         int score_b = get_piece_value(captured_b) * 10 - get_piece_value(piece_b);
-        
-        // Promotions get bonus
-        if (Bitboards::is_promotion(a)) score_a += 5000;
-        if (Bitboards::is_promotion(b)) score_b += 5000;
         
         // Add SEE scores
         score_a += see(board, a);
@@ -751,16 +807,24 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
         return score_a > score_b;
     });
     
-    // Search captures
-    for (int move : captures) {
-        if (should_stop()) return alpha;
+    // Search moves
+    for (int move : moves) {
+        if (should_stop()) {
+            return alpha;
+        }
+        
+        if (!in_check) {
+            g_diag.qCapturesSearched++;
+        }
         
         Board new_board = make_move(board, move);
         int score = -quiescence_search(new_board, -beta, -alpha, 1 - color);
         
         if (score > alpha) {
             alpha = score;
-            if (alpha >= beta) return beta;
+            if (alpha >= beta) {
+                return beta;
+            }
         }
     }
     
@@ -770,6 +834,7 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
 // **ENHANCED**: Alpha-beta search with null move pruning and better mate detection
 int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool allow_null = true) {
     nodes_searched++;
+    g_diag.nodes++;
     
     // Check for time
     if (should_stop()) {
@@ -812,7 +877,10 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
     
     // Use TT score if valid
     if (tt_hit && depth > 0) {
-        if (tt_score >= beta) return beta;
+        if (tt_score >= beta) {
+            g_diag.betaCutoffs++;
+            return beta;
+        }
         if (tt_score <= alpha) return alpha;
     }
     
@@ -852,6 +920,7 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
             
             if (null_score >= beta) {
                 // Null move caused a beta cutoff
+                g_diag.betaCutoffs++;
                 return beta;
             }
         }
@@ -901,10 +970,12 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
             
             if (score > alpha) {
                 alpha = score;
+                g_diag.alphaImproves++;
                 flag = 3;  // exact
                 
                 if (score >= beta) {
                     flag = 2;  // beta cutoff
+                    g_diag.betaCutoffs++;
                     
                     // **ENHANCED**: Update killer moves (only for quiet moves)
                     int to = Bitboards::move_to(move);
@@ -1035,6 +1106,13 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
     start_time = std::chrono::steady_clock::now();
     stop_search = false;
     nodes_searched = 0;
+    
+    // Reset diagnostics if debug tracing enabled
+    if (UCI::options.debug_search_trace) {
+        g_diag = SearchDiagnostics{};
+        g_diag.rootKeyNonZero = (board.hash != 0);
+        g_diag.ttEntries = TT_SIZE;
+    }
     
     // **IMPROVED: Ensure we search at least to depth 3**
     int min_depth = 3;

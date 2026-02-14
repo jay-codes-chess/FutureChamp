@@ -19,6 +19,27 @@
 
 namespace Search {
 
+// Search diagnostics structure
+struct SearchDiagnostics {
+    uint64_t nodes = 0;
+    uint64_t qnodes = 0;
+    uint64_t qEvasions = 0;
+    uint64_t qCapturesSearched = 0;
+    uint64_t qCapturesSkippedSEE = 0;
+    uint64_t qDeltaPruned = 0;
+    uint64_t ttProbes = 0;
+    uint64_t ttHits = 0;
+    uint64_t ttStores = 0;
+    uint64_t ttCollisions = 0;
+    uint64_t ttEntries = 0;
+    bool rootKeyNonZero = false;
+    uint64_t betaCutoffs = 0;
+    uint64_t alphaImproves = 0;
+};
+
+// Global diagnostics instance
+extern SearchDiagnostics g_diag;
+
 struct SearchResult {
     int best_move;  // encoded move (from << 6) | to
     int score;  // centipawns

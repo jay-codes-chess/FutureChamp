@@ -206,6 +206,7 @@ void cmd_uci() {
     
     // === DEBUG ===
     std::cout << "option name DebugHumanPick type check default false" << std::endl;
+    std::cout << "option name DebugSearchTrace type check default false" << std::endl;
     
     std::cout << "uciok" << std::endl;
     std::cout.flush();
@@ -465,6 +466,31 @@ void cmd_go(const std::vector<std::string>& tokens) {
     std::cout << bestmove_line << std::endl;
     std::cout.flush();
     log_out(bestmove_line);
+    
+    // Output search diagnostics if enabled
+    if (UCI::options.debug_search_trace) {
+        int ttHitRate = 0;
+        if (Search::g_diag.ttProbes > 0) {
+            // Multiply by 10000 to get 2 decimal places (e.g., 0.69% -> 69)
+            ttHitRate = static_cast<int>((10000.0 * Search::g_diag.ttHits) / Search::g_diag.ttProbes);
+        }
+        std::cout << "info string SEARCH_DIAG nodes=" << Search::g_diag.nodes << std::endl;
+        std::cout << "info string SEARCH_DIAG qnodes=" << Search::g_diag.qnodes << std::endl;
+        std::cout << "info string SEARCH_Q qEvasions=" << Search::g_diag.qEvasions << std::endl;
+        std::cout << "info string SEARCH_Q qCapturesSearched=" << Search::g_diag.qCapturesSearched << std::endl;
+        std::cout << "info string SEARCH_Q qCapturesSkippedSEE=" << Search::g_diag.qCapturesSkippedSEE << std::endl;
+        std::cout << "info string SEARCH_Q qDeltaPruned=" << Search::g_diag.qDeltaPruned << std::endl;
+        std::cout << "info string SEARCH_DIAG ttEntries=" << Search::g_diag.ttEntries << std::endl;
+        std::cout << "info string SEARCH_DIAG ttProbes=" << Search::g_diag.ttProbes << std::endl;
+        std::cout << "info string SEARCH_DIAG ttHits=" << Search::g_diag.ttHits << std::endl;
+        std::cout << "info string SEARCH_DIAG ttHitRate=" << (ttHitRate / 100) << "." << (ttHitRate % 100) << "%" << std::endl;
+        std::cout << "info string SEARCH_DIAG ttStores=" << Search::g_diag.ttStores << std::endl;
+        std::cout << "info string SEARCH_DIAG ttCollisions=" << Search::g_diag.ttCollisions << std::endl;
+        std::cout << "info string SEARCH_DIAG rootKeyNonZero=" << (Search::g_diag.rootKeyNonZero ? "1" : "0") << std::endl;
+        std::cout << "info string SEARCH_DIAG betaCutoffs=" << Search::g_diag.betaCutoffs << std::endl;
+        std::cout << "info string SEARCH_DIAG alphaImproves=" << Search::g_diag.alphaImproves << std::endl;
+        std::cout.flush();
+    }
 }
 
 
@@ -517,6 +543,8 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
     } else if (name == "DebugEvalTrace") {
         options.debug_eval_trace = (value == "true");
         Evaluation::set_debug_trace(options.debug_eval_trace);
+    } else if (name == "DebugSearchTrace") {
+        options.debug_search_trace = (value == "true");
     } else if (name == "DebugTraceWithParams") {
         Evaluation::set_param("DebugTraceWithParams", value);
     } else if (name == "PersonalityAutoLoad") {
