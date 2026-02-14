@@ -163,6 +163,11 @@ void cmd_uci() {
     std::cout << "option name SacrificeBias type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name SimplicityBias type spin default 100 min 0 max 200" << std::endl;
     
+    // === HUMAN GUARDRAILS ===
+    std::cout << "option name HumanHardFloorCp type spin default 200 min 0 max 600" << std::endl;
+    std::cout << "option name HumanOpeningSanity type spin default 120 min 0 max 200" << std::endl;
+    std::cout << "option name HumanTopKOverride type spin default 0 min 0 max 10" << std::endl;
+    
     // === DEBUG ===
     std::cout << "option name DebugHumanPick type check default false" << std::endl;
     

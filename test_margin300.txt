@@ -1,0 +1,7 @@
+uci
+setoption name HumanSelect value true
+setoption name DebugHumanPick value true
+setoption name CandidateMarginCp value 300
+position startpos
+go depth 6
+quit

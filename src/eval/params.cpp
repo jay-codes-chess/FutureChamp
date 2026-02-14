@@ -236,6 +236,12 @@ bool set_param(const std::string& name, const std::string& value) {
             global_params.sacrifice_bias = std::stoi(value);
         } else if (name == "SimplicityBias") {
             global_params.simplicity_bias = std::stoi(value);
+        } else if (name == "HumanHardFloorCp") {
+            global_params.human_hard_floor_cp = std::stoi(value);
+        } else if (name == "HumanOpeningSanity") {
+            global_params.human_opening_sanity = std::stoi(value);
+        } else if (name == "HumanTopKOverride") {
+            global_params.human_topk_override = std::stoi(value);
         }
         // Debug
         else if (name == "DebugTraceWithParams") {

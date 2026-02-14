@@ -60,6 +60,11 @@ struct Params {
     int sacrifice_bias = 100;            // 0-200 - ties to MaterialPriority
     int simplicity_bias = 100;           // 0-200 - Capa higher
     
+    // === HUMAN GUARDRAILS ===
+    int human_hard_floor_cp = 200;       // 0-600 - drop candidates worse than best-foor
+    int human_opening_sanity = 120;     // 0-200 - penalize edge moves in opening
+    int human_topk_override = 0;        // 1-10 - restrict to top K moves
+    
     // === DEBUG ===
     bool debug_trace_with_params = false;  // Include params in trace output
     bool debug_human_pick = false;        // Debug human move selection

@@ -3,6 +3,7 @@
  * 
  * Implements human-like move selection at the root:
  * - Collect top candidate moves
+ * - Apply guardrails (hard floor, opening sanity, topK)
  * - Apply temperature-based sampling
  * - Add noise, risk appetite, sacrifice bias, simplicity bias
  */
@@ -20,19 +21,25 @@ struct CandidateMove {
     double probability;   // Probability of being selected
     double weight;       // Weight after applying all factors
     
+    CandidateMove() : move(0), score(0), probability(0.0), weight(0.0) {}
     CandidateMove(int m, int s) : move(m), score(s), probability(0.0), weight(0.0) {}
 };
 
 // Human selection functions
 namespace HumanSelection {
 
-// Collect candidate moves at root position
+// Collect candidate moves at root position with guardrails
 // Returns vector of (move, score) pairs sorted by score descending
 std::vector<CandidateMove> collect_candidates(
     void* board_ptr, 
     int candidate_margin_cp, 
     int candidate_moves_max,
-    int max_depth = 3  // Shallow search for candidates
+    int max_depth = 3,
+    int hard_floor_cp = 200,
+    int opening_sanity = 120,
+    int topk_override = 0,
+    int current_ply = 0,
+    bool debug_output = false
 );
 
 // Apply human selection heuristics and pick a move
@@ -49,8 +56,8 @@ int pick_human_move(
     bool debug_output
 );
 
-// Utility: Calculate variance score for a move (higher for tactical moves)
-int calculate_variance_score(void* board_ptr, int move);
+// Utility: Check if move is an edge move in opening
+bool is_edge_move_opening(int move, void* board_ptr);
 
 // Seeded random number generator
 double seeded_random(int seed);

@@ -1165,12 +1165,20 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
     // Apply human selection at root if enabled
     const auto& params = Evaluation::get_params();
     if (params.human_select && result.best_move != 0 && !stop_search) {
-        // Collect candidate moves
+        // Calculate current ply (halfmove clock is plies since last capture/pawn)
+        int current_ply = board.halfmove_clock;
+        
+        // Collect candidate moves with guardrails
         auto candidates = HumanSelection::collect_candidates(
             &board,
             params.candidate_margin_cp,
             params.candidate_moves_max,
-            3  // Shallow search for candidates
+            3,  // Shallow search for candidates
+            params.human_hard_floor_cp,
+            params.human_opening_sanity,
+            params.human_topk_override,
+            current_ply,
+            params.debug_human_pick
         );
         
         if (!candidates.empty() && candidates.size() > 1) {

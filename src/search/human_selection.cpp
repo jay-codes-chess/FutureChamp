@@ -1,7 +1,10 @@
 /**
  * Human Selection - Implementation
  * 
- * Uses Board copy approach for move validation
+ * GUARDRAILS:
+ * - HumanHardFloorCp: drop candidates worse than (best - floor)
+ * - HumanOpeningSanity: penalize edge moves in opening
+ * - HumanTopKOverride: restrict to top K moves
  */
 
 #include "human_selection.hpp"
@@ -30,12 +33,53 @@ double seeded_random(int seed) {
     return static_cast<double>(state) / static_cast<double>(m);
 }
 
-// Collect candidate moves - uses evaluation but ensures consistency
+// Check if a move is an "edge" move in opening (Na3, Nh3, edge pawn pushes)
+bool is_edge_move_opening(int move, void* board_ptr) {
+    Board* board = static_cast<Board*>(board_ptr);
+    int from = Bitboards::move_from(move);
+    int to = Bitboards::move_to(move);
+    int piece = board->piece_at(from);
+    
+    // Only check knights and pawns in opening
+    if ((piece & 7) != 2 && (piece & 7) != 1) return false; // Not knight or pawn
+    
+    int from_file = from % 8;
+    int from_rank = from / 8;
+    
+    // Edge knights: Na3 (a3=21, b3=22), Nh3 (g3=30, h3=31)
+    if ((piece & 7) == 2) { // Knight
+        // a3, b3, g3, h3 (rank 2 from white's perspective)
+        if (from_rank == 2 && (from_file == 0 || from_file == 1 || from_file == 6 || from_file == 7)) {
+            return true;
+        }
+        // a6, b6, g6, h6 (rank 5 from white's perspective)
+        if (from_rank == 5 && (from_file == 0 || from_file == 1 || from_file == 6 || from_file == 7)) {
+            return true;
+        }
+    }
+    
+    // Edge pawn pushes: a3, h3, a4, h4 (not center pawns)
+    if ((piece & 7) == 1) { // Pawn
+        // Only penalize truly edge pawn pushes, not a4/h4 which can be normal
+        if ((from_rank == 1 || from_rank == 6) && (from_file == 0 || from_file == 7)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// Collect candidate moves with guardrails
 std::vector<CandidateMove> collect_candidates(
     void* board_ptr,
     int candidate_margin_cp,
     int candidate_moves_max,
-    int max_depth
+    int max_depth,
+    int hard_floor_cp,
+    int opening_sanity,
+    int topk_override,
+    int current_ply,
+    bool debug_output
 ) {
     Board* board = static_cast<Board*>(board_ptr);
     std::vector<CandidateMove> candidates;
@@ -43,7 +87,7 @@ std::vector<CandidateMove> collect_candidates(
     // Generate all moves
     auto moves = board->generate_moves();
     
-    // For each legal move, evaluate using the SAME method we'll use for selection
+    // For each legal move, evaluate
     for (int move : moves) {
         // Make temporary copy using bitboard operations
         Board temp = *board;
@@ -53,21 +97,17 @@ std::vector<CandidateMove> collect_candidates(
         int flags = Bitboards::move_flags(move);
         int promo = Bitboards::move_promotion(move);
         int piece = board->piece_at(from);
-        int color = board->color_at(from);
         
-        // Skip if no piece
         if (piece == 0) continue;
         
-        // Make move on temp board
+        // Remove from old square
         temp.remove_piece(from);
-        temp.add_piece(to, piece & 7, color);
+        // Add to new square
+        temp.add_piece(to, piece & 7, piece >> 3);
         
-        // Handle captures (remove captured piece)
-        if (to != from) {
-            int captured_piece = board->piece_at(to);
-            if (captured_piece != 0) {
-                temp.remove_piece(to);
-            }
+        // Handle capture if any
+        if (to != from && board->piece_at(to) != 0) {
+            temp.remove_piece(to);
         }
         
         // Skip if king is in check (illegal)
@@ -75,8 +115,7 @@ std::vector<CandidateMove> collect_candidates(
             continue;
         }
         
-        // CRITICAL: Use the SAME evaluation method that will be used for selection
-        // This ensures consistency between candidate list and chosen move
+        // Evaluate
         int score = Evaluation::evaluate(temp);
         
         candidates.emplace_back(move, score);
@@ -88,23 +127,76 @@ std::vector<CandidateMove> collect_candidates(
             return a.score > b.score;
         });
     
-    // Filter by margin and max
-    if (!candidates.empty()) {
-        int best_score = candidates[0].score;
-        int margin = candidate_margin_cp;
-        int hard_floor = best_score - 400;
-        
-        std::vector<CandidateMove> filtered;
-        int count = 0;
-        for (const auto& c : candidates) {
-            if (count >= candidate_moves_max) break;
-            if (c.score < hard_floor) break;
-            if (best_score - c.score <= margin || c.score == best_score) {
-                filtered.push_back(c);
-                count++;
+    if (candidates.empty()) return candidates;
+    
+    int best_score = candidates[0].score;
+    int dropped_by_floor = 0;
+    int dropped_by_opening = 0;
+    
+    // === GUARDRAIL 1: Hard Floor ===
+    // Drop candidates worse than (best_score - hard_floor_cp)
+    int hard_floor = best_score - hard_floor_cp;
+    std::vector<CandidateMove> filtered;
+    for (const auto& c : candidates) {
+        if (c.score >= hard_floor) {
+            filtered.push_back(c);
+        } else {
+            dropped_by_floor++;
+        }
+    }
+    candidates = filtered;
+    
+    // === GUARDRAIL 2: Opening Sanity ===
+    // Penalize edge moves in opening (first 12 plies)
+    bool is_opening = (current_ply < 12);
+    if (is_opening && opening_sanity > 0) {
+        for (auto& c : candidates) {
+            if (is_edge_move_opening(c.move, board_ptr)) {
+                // Penalize by reducing score
+                int penalty = opening_sanity * 5; // Scale: 120 * 5 = 600cp penalty
+                c.score -= penalty;
+                dropped_by_opening++;
             }
         }
+        // Re-sort after penalties
+        std::sort(candidates.begin(), candidates.end(), 
+            [](const CandidateMove& a, const CandidateMove& b) {
+                return a.score > b.score;
+            });
+    }
+    
+    // === GUARDRAIL 3: TopK Override ===
+    // Restrict to top K moves
+    if (topk_override > 0 && topk_override < candidates.size()) {
+        candidates.resize(topk_override);
+    }
+    
+    // Filter by margin and max (original filter)
+    if (!candidates.empty()) {
+        int margin = candidate_margin_cp;
+        int margin_floor = best_score - margin;
+        
+        filtered.clear();
+        for (const auto& c : candidates) {
+            if (c.score >= margin_floor) {
+                filtered.push_back(c);
+            }
+        }
+        
+        // Also enforce candidate_moves_max
+        if (filtered.size() > candidate_moves_max) {
+            filtered.resize(candidate_moves_max);
+        }
         candidates = filtered;
+    }
+    
+    if (debug_output) {
+        std::cerr << "HUMAN_PICK candidates=" << candidates.size() 
+                  << " best=" << best_score 
+                  << " floor=" << hard_floor 
+                  << " droppedByFloor=" << dropped_by_floor
+                  << " droppedByOpening=" << dropped_by_opening
+                  << " isOpening=" << (is_opening ? "1" : "0") << std::endl;
     }
     
     return candidates;
@@ -138,7 +230,7 @@ int pick_human_move(
     double total_weight = 0;
     
     for (auto& c : candidates) {
-        // Base weight from score difference (using SAME scores as candidates)
+        // Base weight from score difference
         double score_diff = (c.score - best_score) / 100.0;
         
         // Apply temperature
@@ -150,7 +242,7 @@ int pick_human_move(
             weight *= std::exp(noise);
         }
         
-        // Apply risk appetite (prefer tactical moves when high)
+        // Apply risk appetite
         if (risk_appetite > 100) {
             double risk_boost = (risk_appetite - 100) / 100.0;
             if (c.score < best_score) {
@@ -181,10 +273,6 @@ int pick_human_move(
     }
     
     if (debug_output) {
-        std::cerr << "HUMAN_PICK candidates=" << candidates.size() 
-                  << " best=" << best_score 
-                  << " temp=" << human_temperature 
-                  << " margin=" << (best_score - candidates.back().score) << std::endl;
         // Print ALL candidates so chosen is always visible
         for (size_t i = 0; i < candidates.size(); i++) {
             const auto& c = candidates[i];
@@ -193,7 +281,7 @@ int pick_human_move(
         }
     }
     
-    // Sample using seeded random - ensures reproducibility
+    // Sample using seeded random
     double r = seeded_random(random_seed + 12345);
     double cumulative = 0;
     int chosen = candidates[0].move;

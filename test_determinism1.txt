@@ -1,0 +1,8 @@
+uci
+setoption name RandomSeed value 1234
+setoption name HumanSelect value true
+setoption name HumanTemperature value 120
+setoption name DebugHumanPick value true
+position startpos
+go depth 6
+quit

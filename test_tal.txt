@@ -1,0 +1,7 @@
+uci
+setoption name HumanSelect value true
+setoption name RandomSeed value 42
+setoption name Personality value tal
+position startpos
+go depth 6
+quit
