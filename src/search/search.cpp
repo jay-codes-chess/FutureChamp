@@ -17,6 +17,8 @@
 #include "../eval/evaluation.hpp"
 #include "../eval/params.hpp"
 #include "../uci/uci.hpp"
+
+// Use UCI::options directly
 #include <iostream>
 #include <chrono>
 #include <algorithm>
@@ -77,6 +79,10 @@ struct UndoDelta {
 };
 
 inline void save_delta(const Board& b, UndoDelta& u, int move) {
+    if (UCI::options.debug_search_trace) {
+        g_diag.makeMoveCalls++;
+    }
+    
     u.pieces_pawn = b.pieces[PAWN];
     u.pieces_knight = b.pieces[KNIGHT];
     u.pieces_bishop = b.pieces[BISHOP];
@@ -107,6 +113,10 @@ inline void save_delta(const Board& b, UndoDelta& u, int move) {
 }
 
 inline void restore_delta(Board& b, const UndoDelta& u) {
+    if (UCI::options.debug_search_trace) {
+        g_diag.unmakeMoveCalls++;
+    }
+    
     b.pieces[PAWN] = u.pieces_pawn;
     b.pieces[KNIGHT] = u.pieces_knight;
     b.pieces[BISHOP] = u.pieces_bishop;
@@ -497,6 +507,10 @@ int evaluate_position(const Board& board, int color) {
 
 // Make move on board
 Board make_move(const Board& board, int move) {
+    if (UCI::options.debug_search_trace) {
+        g_diag.boardCopies++;
+    }
+    
     Board new_board = board;
     int from = Bitboards::move_from(move);
     int to = Bitboards::move_to(move);
@@ -1059,6 +1073,9 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
 int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool allow_null = true) {
     nodes_searched++;
     g_diag.nodes++;
+    
+    // Timing instrumentation (only when debug enabled)
+    auto t_start = std::chrono::steady_clock::now();
     
     // Check for time
     if (should_stop()) {

@@ -504,6 +504,18 @@ void cmd_go(const std::vector<std::string>& tokens) {
         std::cout << "info string SEARCH_DIAG rootKeyNonZero=" << (Search::g_diag.rootKeyNonZero ? "1" : "0") << std::endl;
         std::cout << "info string SEARCH_DIAG betaCutoffs=" << Search::g_diag.betaCutoffs << std::endl;
         std::cout << "info string SEARCH_DIAG alphaImproves=" << Search::g_diag.alphaImproves << std::endl;
+        
+        // HOTPATH counters
+        std::cout << "info string HOTPATH make=" << Search::g_diag.makeMoveCalls 
+                  << " unmake=" << Search::g_diag.unmakeMoveCalls 
+                  << " copies=" << Search::g_diag.boardCopies << std::endl;
+        
+        // PROFILE timing buckets
+        std::cout << "info string PROFILE movegenMs=" << (Search::g_diag.t_movegen / 1000)
+                  << " makeMs=" << (Search::g_diag.t_makeunmake / 1000)
+                  << " evalMs=" << (Search::g_diag.t_eval / 1000)
+                  << " legalityMs=" << (Search::g_diag.t_legality / 1000) << std::endl;
+        
         std::cout.flush();
     }
 }

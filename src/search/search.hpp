@@ -37,6 +37,18 @@ struct SearchDiagnostics {
     bool rootKeyNonZero = false;
     uint64_t betaCutoffs = 0;
     uint64_t alphaImproves = 0;
+    
+    // Hotpath counters
+    uint64_t makeMoveCalls = 0;
+    uint64_t unmakeMoveCalls = 0;
+    uint64_t boardCopies = 0;
+    
+    // Timing buckets (root only, in microseconds)
+    uint64_t t_movegen = 0;
+    uint64_t t_makeunmake = 0;
+    uint64_t t_eval = 0;
+    uint64_t t_legality = 0;
+    
     std::chrono::steady_clock::time_point searchStartTime;
     std::chrono::steady_clock::time_point searchEndTime;
 };
