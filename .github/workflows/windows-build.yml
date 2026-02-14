@@ -22,13 +22,19 @@ jobs:
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-make
 
-      - name: Build (Makefile)
+      - name: Build (Makefile) - Release
         shell: msys2 {0}
         run: |
           cd "$GITHUB_WORKSPACE"
-          ls
           make clean || true
-          make
+          make CXXFLAGS="-O2 -std=c++17 -DNDEBUG"
+
+      - name: Verify build output
+        shell: msys2 {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          ls -la
+          find . -maxdepth 3 -name "FutureChamp.exe" -print
 
       - name: Upload FutureChamp.exe artifact
         uses: actions/upload-artifact@v4
