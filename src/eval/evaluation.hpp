@@ -48,6 +48,7 @@ struct ScoreBreakdown {
     int color_complex = 0;
     int pawn_lever = 0;
     int initiative_persist = 0;
+    int initiative_persist_raw = 0;  // Before personality scaling
     int total = 0;
 };
 

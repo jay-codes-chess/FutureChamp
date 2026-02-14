@@ -10,10 +10,8 @@ pawn_lever_white|r1bqkbnr/pppp1ppp/2n5/4p3/2P1P3/8/PP1P1PPP/RNBQKBNR w KQkq - 0 
 # Pawn lever - black can push d5xe4
 pawn_lever_black|r1bqkbnr/ppp1pppp/2n5/3p4/2P5/8/PP1PPPPP/RNBQKBNR b KQkq - 0 3
 
-# Initiative good for WHITE - white has more developed pieces
-# White: Nf3, Bc4, development lead
-initiative_good_for_white|r1bqk2r/pppp1ppp/2n2n2/2b1p3/4P3/2N2N2/PPPP1PPP/R2Q1BK1 w kq - 4 9
+# Initiative good for WHITE - White has development lead (2 knights developed vs black 0)
+initiative_good_for_white|r1bqk2r/pppp1ppp/2n5/4p3/2B1P3/2N2N2/PPPP1PPP/R2Q1BK1 w kq - 4 9
 
-# Initiative good for BLACK - black has more developed pieces  
-# Black: Nf6, Bc5, development lead over white in opening
-initiative_good_for_black|r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/5N2/PPPP1PPP/R2Q1RK1 b kq - 4 9
+# Initiative good for BLACK - Black has development lead (2 knights/c bishops developed vs white 0)
+initiative_good_for_black|r2qk2r/pppp1ppp/2n5/4p3/2B1P3/2N2N2/PPPP1PPP/2K1B1RR b kq - 4 9

@@ -57,7 +57,8 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     bd.exchange_sac = eval_exchange_sac_compensation(board, p);
     bd.color_complex = eval_weak_color_complex(board, p);
     bd.pawn_lever = eval_pawn_lever_timing(board, p);
-    bd.initiative_persist = eval_initiative_persistence(board, p);
+    bd.initiative_persist_raw = eval_initiative_persistence(board, p);  // Raw before scaling
+    bd.initiative_persist = bd.initiative_persist_raw * p.concept_initiative_persist_weight / 100;  // Scaled
     
     // Apply params weights
     // Scale factor (100 = 1.0)
@@ -75,6 +76,7 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
         initiative_score = initiative_score * p.initiative_dominance / 100;
     }
     score += static_cast<int>(initiative_score * p.w_initiative / 100.0f);
+    score += bd.initiative_persist;  // Add scaled initiative persist concept
     score += bd.knowledge;  // Already weighted internally
     
     // Tempo
@@ -179,6 +181,7 @@ int evaluate_at_root(const Board& board) {
             << " color_complex=" << bd.color_complex
             << " pawn_lever=" << bd.pawn_lever
             << " init_persist=" << bd.initiative_persist
+            << " init_persist_raw=" << bd.initiative_persist_raw
             << " total=" << bd.total;
         
         // Optionally include params in trace
@@ -198,6 +201,7 @@ int evaluate_at_root(const Board& board) {
                 << " C_color=" << p.concept_color_complex_weight
                 << " C_lever=" << p.concept_pawn_lever_weight
                 << " C_init_persist=" << p.concept_initiative_persist_weight
+                << " InitDom=" << p.initiative_dominance
                 << " ImbScale=" << p.imbalance_scale;
         }
         

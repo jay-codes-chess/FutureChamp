@@ -14,6 +14,7 @@
 #include <sstream>
 #include <vector>
 #include <map>
+#include <algorithm>
 #include <chrono>
 #include "uci/uci.hpp"
 #include "search/search.hpp"
@@ -116,6 +117,15 @@ void run_compare_mode(const std::string& personalities_list, const std::string& 
     
     std::cout << "=== Comparing personalities: " << personalities_list << " ===" << std::endl;
     std::cout << "info string Compare: " << personalities[0] << "=personalities/" << personalities[0] << ".json, " << personalities[1] << "=personalities/" << personalities[1] << ".json" << std::endl;
+    
+    // Print key initiative params for each personality
+    for (const auto& p : personalities) {
+        Evaluation::load_personality(p, false);
+        const auto& params = Evaluation::get_params();
+        std::cout << "info string " << p << ": W_Init=" << params.w_initiative 
+                  << " InitPersist=" << params.concept_initiative_persist_weight
+                  << " InitDom=" << params.initiative_dominance << std::endl;
+    }
     std::cout << std::endl;
     
     // Load all FENs
@@ -143,13 +153,13 @@ void run_compare_mode(const std::string& personalities_list, const std::string& 
     // Print header
     std::cout << "FEN";
     for (const auto& p : personalities) {
-        std::cout << " | " << p << "_total | " << p << "_exch | " << p << "_init";
+        std::cout << " | " << p << "_total | " << p << "_exch | " << p << "_init | " << p << "_init_raw";
     }
     std::cout << " | delta" << std::endl;
     
     std::cout << "---";
     for (size_t i = 0; i < personalities.size(); ++i) {
-        std::cout << " | ---total--- | ---exch--- | ---init---";
+        std::cout << " | ---total--- | ---exch--- | ---init--- | ---init_raw---";
     }
     std::cout << " | ------" << std::endl;
     
@@ -177,7 +187,8 @@ void run_compare_mode(const std::string& personalities_list, const std::string& 
             
             std::cout << " | " << total 
                       << " | " << bd.exchange_sac 
-                      << " | " << bd.initiative_persist;
+                      << " | " << bd.initiative_persist
+                      << " | " << bd.initiative_persist_raw;
             
             totals.push_back(total);
         }
@@ -233,18 +244,16 @@ std::map<std::string, std::map<std::string, int>> load_expectations(const std::s
         }
         // Check for expectation keys
         else if (before.find("should_be_higher_by") != std::string::npos) {
-            // Determine type from parent
-            if (before.find("tal_") == 0) {
-                current_type = "tal_higher";
-            } else if (before.find("petrosian_") == 0) {
-                current_type = "petrosian_higher";
-            }
+            // Use the FULL key as the type (e.g., "tal_init_should_be_higher_by")
+            // Replace spaces with underscores for valid key
+            std::string type = before;
+            std::replace(type.begin(), type.end(), ' ', '_');
             
             // Parse value
             try {
                 int val = std::stoi(after);
-                if (!current_fen.empty() && !current_type.empty()) {
-                    expectations[current_fen][current_type] = val;
+                if (!current_fen.empty() && !type.empty()) {
+                    expectations[current_fen][type] = val;
                 }
             } catch (...) {}
         }
@@ -308,8 +317,22 @@ void run_expectations_mode(const std::string& personalities_list, const std::str
         if (abs(petrosian_score) > 5000) petrosian_score = (petrosian_score > 0) ? 5000 : -5000;
         if (abs(tal_score) > 5000) tal_score = (tal_score > 0) ? 5000 : -5000;
         
-        // delta = tal - petrosian (positive = tal higher)
+            // delta = tal - petrosian (positive = tal higher)
         int delta = tal_score - petrosian_score;
+        
+        // Also calculate initiative_persist component delta
+        int petrosian_init = 0, tal_init = 0;
+        
+        // Re-evaluate to get initiative component
+        Evaluation::load_personality("petrosian", false);
+        Evaluation::ScoreBreakdown bd_p = eval_fen(fen_pair.second);
+        petrosian_init = bd_p.initiative_persist;
+        
+        Evaluation::load_personality("tal", false);
+        Evaluation::ScoreBreakdown bd_t = eval_fen(fen_pair.second);
+        tal_init = bd_t.initiative_persist;
+        
+        int init_delta = tal_init - petrosian_init;
         
         auto& exp = expectations[fen_id];
         
@@ -323,7 +346,7 @@ void run_expectations_mode(const std::string& personalities_list, const std::str
             
             // delta = tal - petrosian
             if (type == "tal_higher") {
-                // Tal should be higher, delta should be >= expected
+                // Tal should be higher in TOTAL score
                 if (delta >= expected_delta) {
                     test_passed = true;
                     note = "Tal correctly higher by " + std::to_string(delta);
@@ -331,12 +354,28 @@ void run_expectations_mode(const std::string& personalities_list, const std::str
                     note = "FAILED: Tal should be higher by " + std::to_string(expected_delta) + ", was " + std::to_string(delta);
                 }
             } else if (type == "petrosian_higher") {
-                // Petrosian should be higher, delta should be <= -expected
+                // Petrosian should be higher in TOTAL score
                 if (delta <= -expected_delta) {
                     test_passed = true;
                     note = "Petrosian correctly higher by " + std::to_string(-delta);
                 } else {
                     note = "FAILED: Petrosian should be higher by " + std::to_string(expected_delta) + ", was " + std::to_string(-delta);
+                }
+            } else if (type == "tal_init_should_be_higher_by") {
+                // Tal should have HIGHER init_persist component
+                if (init_delta >= expected_delta) {
+                    test_passed = true;
+                    note = "Tal init_persist correctly higher by " + std::to_string(init_delta);
+                } else {
+                    note = "FAILED: Tal init_persist should be higher by " + std::to_string(expected_delta) + ", was " + std::to_string(init_delta);
+                }
+            } else if (type == "petrosian_init_should_be_higher_by") {
+                // Petrosian should have HIGHER init_persist component
+                if (init_delta <= -expected_delta) {
+                    test_passed = true;
+                    note = "Petrosian init_persist correctly higher by " + std::to_string(-init_delta);
+                } else {
+                    note = "FAILED: Petrosian init_persist should be higher by " + std::to_string(expected_delta) + ", was " + std::to_string(-init_delta);
                 }
             }
             
