@@ -2,10 +2,10 @@
   "pawn_lever_white": {
     "petrosian_should_be_higher_by": 30
   },
-  "initiative_white_1": {
-    "tal_should_be_higher_by": -500
+  "initiative_good_for_white": {
+    "tal_should_be_higher_by": 30
   },
-  "initiative_white_2": {
-    "tal_should_be_higher_by": -200
+  "initiative_good_for_black": {
+    "tal_should_be_higher_by": 20
   }
 }

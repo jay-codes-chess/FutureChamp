@@ -465,14 +465,18 @@ int eval_initiative_persistence(const Board& board, const Params& params) {
     }
     
     // Development lead gives initiative
+    // Score positive = white has initiative, negative = black has initiative
     int dev_diff = white_developed - black_developed;
-    if (board.side_to_move == WHITE && dev_diff > 0) {
+    if (dev_diff > 0) {
+        // White has more development - positive score for white
         score += dev_diff * 15;
-    } else if (board.side_to_move == BLACK && dev_diff < 0) {
-        score -= (-dev_diff) * 15;
+    } else if (dev_diff < 0) {
+        // Black has more development - negative score from white's perspective
+        score += dev_diff * 15;  // dev_diff is already negative
     }
     
     // King in center (not castled) - temporary initiative
+    // Score positive = white initiative, negative = black initiative
     int white_king_file = -1, black_king_file = -1;
     for (int sq = 0; sq < 64; ++sq) {
         if (board.piece_at(sq) == KING) {
@@ -483,10 +487,10 @@ int eval_initiative_persistence(const Board& board, const Params& params) {
     
     // King on e1/d1 or e8/d8 (not castled) gives initiative
     if (white_king_file >= 2 && white_king_file <= 5 && board.color_at(4) == WHITE) {
-        score += 10;  // King still in center
+        score += 10;  // White king in center - white has initiative
     }
     if (black_king_file >= 2 && black_king_file <= 5 && board.color_at(60) == BLACK) {
-        score -= 10;
+        score -= 10;  // Black king in center - black has initiative (negative from white POV)
     }
     
     return score * params.concept_initiative_persist_weight / 100;
