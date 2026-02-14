@@ -509,6 +509,7 @@ int evaluate_position(const Board& board, int color) {
 Board make_move(const Board& board, int move) {
     if (UCI::options.debug_search_trace) {
         g_diag.boardCopies++;
+        g_diag.copies_make_return++;
     }
     
     Board new_board = board;
@@ -670,29 +671,38 @@ std::vector<int> generate_moves(const Board& board) {
 }
 
 // Check if move is legal (king not in check after move)
-bool is_legal(const Board& board, int move) {
-    // Make the move on a copy
-    Board test_board = make_move(board, move);
+// Check if move is legal using in-place make/unmake (no board copy)
+bool is_legal(Board& board, int move) {
+    // Save state and make move in-place
+    UndoDelta u;
+    save_delta(board, u, move);
+    make_move_inplace(board, move);
     
     // Check if OUR king is in check after the move
-    int our_color = board.side_to_move;
+    int our_color = 1 - board.side_to_move;  // side switched after move
     
     // Find our king in the new position
     int king_sq = -1;
     for (int sq = 0; sq < 64; sq++) {
-        if (test_board.piece_at(sq) == KING && test_board.color_at(sq) == our_color) {
+        if (board.piece_at(sq) == KING && board.color_at(sq) == our_color) {
             king_sq = sq;
             break;
         }
     }
     
+    bool legal = true;
     if (king_sq == -1) {
         // No king? Should never happen
-        return false;
+        legal = false;
+    } else {
+        // Check if king is attacked
+        legal = !Bitboards::is_square_attacked(board, king_sq, 1 - our_color);
     }
     
-    // Check if king is attacked
-    return !Bitboards::is_square_attacked(test_board, king_sq, 1 - our_color);
+    // Restore board state
+    restore_delta(board, u);
+    
+    return legal;
 }
 
 
@@ -914,7 +924,7 @@ void order_moves(std::vector<int>& moves, Board& board, int tt_move, int depth) 
 
 
 // Generate candidate moves (Kotov method)
-std::vector<int> generate_candidates(const Board& board) {
+std::vector<int> generate_candidates(Board& board) {
     MoveList all_moves; generate_moves(board, all_moves);
     std::vector<int> legal_moves;
     
@@ -1149,15 +1159,26 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
         }
         
         if (our_material > 400) {  // More than a rook
-            // Make a null move (pass the turn)
-            Board null_board = board;
-            null_board.side_to_move = 1 - color;
-            null_board.en_passant_square = -1;
-            null_board.compute_hash();
+            // Make a null move (pass the turn) - NO BOARD COPY
+            int old_ep = board.en_passant_square;
+            int old_halfmove = board.halfmove_clock;
+            int old_side = board.side_to_move;
+            uint64_t old_hash = board.hash;
+            
+            board.side_to_move = 1 - color;
+            board.en_passant_square = -1;
+            board.halfmove_clock++;
+            board.compute_hash();
             
             // Search with reduced depth
             int R = 2;  // Reduction factor
-            int null_score = -alpha_beta(null_board, depth - 1 - R, -beta, -beta + 1, 1 - color, false);
+            int null_score = -alpha_beta(board, depth - 1 - R, -beta, -beta + 1, 1 - color, false);
+            
+            // Restore null move state
+            board.side_to_move = old_side;
+            board.en_passant_square = old_ep;
+            board.halfmove_clock = old_halfmove;
+            board.hash = old_hash;
             
             if (null_score >= beta) {
                 // Null move caused a beta cutoff
@@ -1295,6 +1316,8 @@ std::vector<std::string> extract_pv(Board board, int max_depth) {
         
         // Make the move
         board = make_move(board, move);
+        g_diag.boardCopies++;
+        g_diag.copies_pv++;
     }
     
     return pv;
@@ -1440,6 +1463,9 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
         
         // Extract full PV line from transposition table
         Board pv_board = board;
+        g_diag.boardCopies++;
+        g_diag.copies_pv++;
+        
         std::vector<std::string> pv_line = extract_pv(pv_board, depth);
         
         // Build PV string
@@ -1634,6 +1660,8 @@ std::string apply_uci_move(const std::string& fen, const std::string& uci_move) 
     
     // Apply the move
     Board new_board = make_move(board, matched_move);
+    g_diag.boardCopies++;
+    g_diag.copies_other++;
     
     // Update move counters
     new_board.fullmove_number = board.fullmove_number + (board.side_to_move == BLACK ? 1 : 0);
@@ -1679,6 +1707,9 @@ void perft_divide(Board& board, int depth) {
         }
         
         Board temp = make_move(board, move);
+        g_diag.boardCopies++;
+        g_diag.copies_other++;  // perft
+        
         uint64_t count = perft_recursive(temp, depth - 1);
         
         std::string uci = Bitboards::move_to_uci(move);
@@ -1712,6 +1743,8 @@ uint64_t perft_recursive(Board& board, int depth) {
         
         // Make move
         Board temp = make_move(board, move);
+        g_diag.boardCopies++;
+        g_diag.copies_other++;  // perft
         
         // DEBUG: Verify board state is valid after make_move
         // Check king exists for both sides
@@ -1783,6 +1816,9 @@ void perft(Board& board, int depth) {
             
             // Make the move and check
             Board temp = make_move(board, move);
+            g_diag.boardCopies++;
+            g_diag.copies_other++;  // perft
+            
             bool king_in_check = temp.is_in_check(temp.side_to_move);
             
             std::cout << move_uci << " (ILLEGAL - ";
@@ -1795,6 +1831,9 @@ void perft(Board& board, int depth) {
         uint64_t count = 1;
         if (depth > 1) {
             Board temp = make_move(board, move);
+            g_diag.boardCopies++;
+            g_diag.copies_other++;  // perft
+            
             count = perft_recursive(temp, depth - 1);
         }
         

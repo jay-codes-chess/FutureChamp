@@ -510,6 +510,16 @@ void cmd_go(const std::vector<std::string>& tokens) {
                   << " unmake=" << Search::g_diag.unmakeMoveCalls 
                   << " copies=" << Search::g_diag.boardCopies << std::endl;
         
+        // COPIES attribution
+        std::cout << "info string COPIES total=" << Search::g_diag.boardCopies
+                  << " make_return=" << Search::g_diag.copies_make_return
+                  << " clone=" << Search::g_diag.copies_board_clone
+                  << " null=" << Search::g_diag.copies_nullmove
+                  << " legality=" << Search::g_diag.copies_legality
+                  << " q=" << Search::g_diag.copies_qsearch
+                  << " pv=" << Search::g_diag.copies_pv
+                  << " other=" << Search::g_diag.copies_other << std::endl;
+        
         // PROFILE timing buckets
         std::cout << "info string PROFILE movegenMs=" << (Search::g_diag.t_movegen / 1000)
                   << " makeMs=" << (Search::g_diag.t_makeunmake / 1000)

@@ -43,6 +43,15 @@ struct SearchDiagnostics {
     uint64_t unmakeMoveCalls = 0;
     uint64_t boardCopies = 0;
     
+    // Copy attribution counters
+    uint64_t copies_make_return = 0;
+    uint64_t copies_board_clone = 0;
+    uint64_t copies_nullmove = 0;
+    uint64_t copies_legality = 0;
+    uint64_t copies_qsearch = 0;
+    uint64_t copies_pv = 0;
+    uint64_t copies_other = 0;
+    
     // Timing buckets (root only, in microseconds)
     uint64_t t_movegen = 0;
     uint64_t t_makeunmake = 0;
@@ -69,7 +78,7 @@ struct SearchResult {
 void initialize();
 void perft(Board& board, int depth);
 void perft_divide(Board& board, int depth);
-bool is_legal(const Board& board, int move);
+bool is_legal(Board& board, int move);
 
 // Set search parameters
 void set_threads(int n);
