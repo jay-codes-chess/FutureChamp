@@ -1376,9 +1376,20 @@ void perft(Board& board, int depth) {
     for (int move : moves) {
         // Check if move is LEGAL before counting
         if (!is_legal(board, move)) {
-            // Print illegal moves for debugging
+            // Print illegal moves for debugging - show WHY it's illegal
             std::string move_uci = Bitboards::move_to_uci(move);
-            std::cout << move_uci << " (ILLEGAL - SKIPPED)" << std::endl;
+            int from = Bitboards::move_from(move);
+            int to = Bitboards::move_to(move);
+            int flags = Bitboards::move_flags(move);
+            
+            // Make the move and check
+            Board temp = make_move(board, move);
+            bool king_in_check = temp.is_in_check(temp.side_to_move);
+            
+            std::cout << move_uci << " (ILLEGAL - ";
+            if (king_in_check) std::cout << "king in check)";
+            else std::cout << "unknown)";
+            std::cout << std::endl;
             continue;
         }
         
