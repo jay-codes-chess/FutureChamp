@@ -143,6 +143,12 @@ void cmd_uci() {
     std::cout << "option name ConceptBadBishopWeight type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name ConceptSpaceWeight type spin default 100 min 0 max 200" << std::endl;
     
+    // === MASTER CONCEPTS ===
+    std::cout << "option name ConceptExchangeSacWeight type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name ConceptColorComplexWeight type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name ConceptPawnLeverWeight type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name ConceptInitiativePersistWeight type spin default 100 min 0 max 200" << std::endl;
+    
     // === SEARCH / HUMANISATION ===
     std::cout << "option name CandidateMarginCp type spin default 200 min 0 max 400" << std::endl;
     std::cout << "option name CandidateMovesMax type spin default 10 min 1 max 30" << std::endl;

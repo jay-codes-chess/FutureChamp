@@ -1,0 +1,26 @@
+# Master Concepts Test FENs
+# Format: description | FEN
+
+# Exchange sac archetype - white down exchange but has compensation
+exchange_sac_white|r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P2/2N2N2/PPPP1PPP/R2Q1RK1 w - - 0 7
+
+# Exchange sac black - black down exchange with compensation
+exchange_sac_black|2kr3r/pppp1ppp/2n2n2/2b1p3/2B1P2/2N2N2/PPPP1PPP/R2Q1RK1 b - - 0 7
+
+# Weak dark squares around white king
+weak_dark_squares|rn1qkbnr/ppp3pp/3p4/2b1p3/2B1P2/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 6
+
+# Weak light squares around black king
+weak_light_squares|rn1qk2r/pppb1ppp/3p1n2/2b1p3/2B1P2/5N2/PPPP1PPP/RNBQ1RK1 b kq - 0 6
+
+# Pawn lever opportunity - white can push e4xe5
+pawn_lever_white|r1bqkbnr/pppp1ppp/2n5/4p3/2P1P3/8/PP1P1PPP/RNBQKBNR w KQkq - 0 4
+
+# Pawn lever opportunity - black can push d5xe4
+pawn_lever_black|r1bqkbnr/ppp1pppp/2n5/3p4/2P5/8/PP1PPPPP/RNBQKBNR b KQkq - 0 3
+
+# Initiative - white development lead
+initiative_white|r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/2KQ1RRR b kq - 0 6
+
+# Initiative - black development lead
+initiative_black|2kr3r/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/2K1RRRR w - - 0 7

@@ -30,6 +30,12 @@ int eval_knight_vs_bad_bishop(const Board& board, const Params& params);
 int eval_rook_on_7th(const Board& board, const Params& params);
 int eval_space_advantage(const Board& board, const Params& params);
 
+// Master concept evaluators
+int eval_exchange_sac_compensation(const Board& board, const Params& params);
+int eval_weak_color_complex(const Board& board, const Params& params);
+int eval_pawn_lever_timing(const Board& board, const Params& params);
+int eval_initiative_persistence(const Board& board, const Params& params);
+
 } // namespace Evaluation
 
 #endif // EVAL_KNOWLEDGE_HPP

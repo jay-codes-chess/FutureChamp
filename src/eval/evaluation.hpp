@@ -43,6 +43,11 @@ struct ScoreBreakdown {
     int imbalance = 0;
     int initiative = 0;
     int knowledge = 0;
+    // Master concepts (part of knowledge)
+    int exchange_sac = 0;
+    int color_complex = 0;
+    int pawn_lever = 0;
+    int initiative_persist = 0;
     int total = 0;
 };
 

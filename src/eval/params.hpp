@@ -40,6 +40,12 @@ struct Params {
     int concept_bad_bishop_weight = 100; // 0-200
     int concept_space_weight = 100;      // 0-200
     
+    // === MASTER CONCEPTS ===
+    int concept_exchange_sac_weight = 100;    // 0-200
+    int concept_color_complex_weight = 100;  // 0-200
+    int concept_pawn_lever_weight = 100;      // 0-200
+    int concept_initiative_persist_weight = 100; // 0-200
+    
     // === SEARCH / HUMANISATION ===
     int candidate_margin_cp = 200;      // 0-400
     int candidate_moves_max = 10;       // 1-30
