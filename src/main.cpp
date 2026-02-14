@@ -426,11 +426,14 @@ int main(int argc, char* argv[]) {
             // Perft mode: FutureChamp.exe perft <depth> [fen]
             int depth = 4;
             std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-            if (i + 1 < argc) {
+            if (i + 1 < argc && argv[i+1][0] >= '0' && argv[i+1][0] <= '9') {
                 depth = std::stoi(argv[++i]);
             }
             if (i + 1 < argc && argv[i+1][0] != '-') {
-                fen = argv[++i];
+                // Check if it looks like a FEN (contains /)
+                if (std::string(argv[i+1]).find('/') != std::string::npos) {
+                    fen = argv[++i];
+                }
             }
             Board b;
             b.set_from_fen(fen);

@@ -1370,12 +1370,15 @@ void perft(Board& board, int depth) {
     auto moves = board.generate_moves();
     
     // First, print perft 1 for each move
-    std::cout << "Move           | Count    | %" << std::endl;
-    std::cout << "---------------|----------|----" << std::endl;
+    std::cout << "Move        | Count     | %" << std::endl;
+    std::cout << "------------|-----------|----" << std::endl;
     
     for (int move : moves) {
         // Check if move is LEGAL before counting
         if (!is_legal(board, move)) {
+            // Print illegal moves for debugging
+            std::string move_uci = Bitboards::move_to_uci(move);
+            std::cout << move_uci << " (ILLEGAL - SKIPPED)" << std::endl;
             continue;
         }
         
@@ -1386,8 +1389,7 @@ void perft(Board& board, int depth) {
         }
         
         std::string move_uci = Bitboards::move_to_uci(move);
-        double pct = 0;
-        std::cout << move_uci << std::string(14 - move_uci.length(), ' ') << "| " << count;
+        std::cout << move_uci << std::string(12 - move_uci.length(), ' ') << "| " << count << std::endl;
         
         total_nodes += count;
     }
@@ -1395,8 +1397,7 @@ void perft(Board& board, int depth) {
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     
-    std::cout << std::endl;
-    std::cout << "---------------|----------|----" << std::endl;
+    std::cout << "------------|-----------|----" << std::endl;
     std::cout << "Total nodes:   " << total_nodes << std::endl;
     std::cout << "Time:          " << duration.count() << " ms" << std::endl;
     std::cout << "Nodes/second:  " << (duration.count() > 0 ? total_nodes / (duration.count() / 1000.0) : 0) << std::endl;
