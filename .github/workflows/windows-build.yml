@@ -29,16 +29,21 @@ jobs:
           make clean || true
           make CXXFLAGS="-O2 -std=c++17 -DNDEBUG"
 
-      - name: Verify build output
-        shell: msys2 {0}
+      - name: Locate FutureChamp.exe
+        shell: pwsh
         run: |
-          cd "$GITHUB_WORKSPACE"
-          ls -la
-          find . -maxdepth 3 -name "FutureChamp.exe" -print
+          Write-Host "Searching for FutureChamp.exe..."
+          $exe = Get-ChildItem -Path . -Recurse -Filter FutureChamp.exe | Select-Object -First 1
+          if (-not $exe) {
+              Write-Error "FutureChamp.exe NOT FOUND"
+              exit 1
+          }
+          Write-Host "FOUND:"
+          Write-Host $exe.FullName
+          echo "EXE_PATH=$($exe.FullName)" >> $env:GITHUB_ENV
 
-      - name: Upload FutureChamp.exe artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: FutureChamp-windows
-          path: |
-            FutureChamp.exe
+          path: ${{ env.EXE_PATH }}
