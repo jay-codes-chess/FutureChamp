@@ -115,6 +115,7 @@ void run_compare_mode(const std::string& personalities_list, const std::string& 
     }
     
     std::cout << "=== Comparing personalities: " << personalities_list << " ===" << std::endl;
+    std::cout << "info string Compare: " << personalities[0] << "=personalities/" << personalities[0] << ".json, " << personalities[1] << "=personalities/" << personalities[1] << ".json" << std::endl;
     std::cout << std::endl;
     
     // Load all FENs
@@ -165,15 +166,24 @@ void run_compare_mode(const std::string& personalities_list, const std::string& 
             // Evaluate
             Evaluation::ScoreBreakdown bd = eval_fen(fen_pair.second);
             
-            std::cout << " | " << bd.total 
+            int total = bd.total;
+            bool clamped = false;
+            
+            // Warn about suspicious eval magnitudes
+            if (abs(total) > 5000) {
+                std::cout << "[WARN: eval=" << total << "]";
+                clamped = true;
+            }
+            
+            std::cout << " | " << total 
                       << " | " << bd.exchange_sac 
                       << " | " << bd.initiative_persist;
             
-            totals.push_back(bd.total);
+            totals.push_back(total);
         }
         
-        // Calculate delta (first - last personality)
-        int delta = totals[0] - totals.back();
+        // Calculate delta: tal_total - petrosian_total (second personality - first)
+        int delta = totals.back() - totals[0];
         std::cout << " | " << delta << std::endl;
     }
     
@@ -286,15 +296,20 @@ void run_expectations_mode(const std::string& personalities_list, const std::str
         
         if (expectations.find(fen_id) == expectations.end()) continue;
         
-        // Evaluate with first personality
+        // Evaluate with first personality (petrosian)
         Evaluation::load_personality(personalities[0], false);
-        int score1 = eval_fen(fen_pair.second).total;
+        int petrosian_score = eval_fen(fen_pair.second).total;
         
-        // Evaluate with second personality  
+        // Evaluate with second personality (tal)  
         Evaluation::load_personality(personalities[1], false);
-        int score2 = eval_fen(fen_pair.second).total;
+        int tal_score = eval_fen(fen_pair.second).total;
         
-        int delta = score1 - score2;
+        // Clamp suspicious scores
+        if (abs(petrosian_score) > 5000) petrosian_score = (petrosian_score > 0) ? 5000 : -5000;
+        if (abs(tal_score) > 5000) tal_score = (tal_score > 0) ? 5000 : -5000;
+        
+        // delta = tal - petrosian (positive = tal higher)
+        int delta = tal_score - petrosian_score;
         
         auto& exp = expectations[fen_id];
         
@@ -306,21 +321,22 @@ void run_expectations_mode(const std::string& personalities_list, const std::str
             bool test_passed = false;
             std::string note;
             
+            // delta = tal - petrosian
             if (type == "tal_higher") {
-                // First personality (petrosian) should be LOWER than tal (second)
-                // So delta (petrosian - tal) should be negative or less than expected
-                if (delta <= expected_delta) {
-                    test_passed = true;
-                    note = "Tal correctly higher by " + std::to_string(-delta);
-                } else {
-                    note = "FAILED: Tal should be higher by " + std::to_string(expected_delta) + ", was " + std::to_string(-delta);
-                }
-            } else if (type == "petrosian_higher") {
+                // Tal should be higher, delta should be >= expected
                 if (delta >= expected_delta) {
                     test_passed = true;
-                    note = "Petrosian correctly higher by " + std::to_string(delta);
+                    note = "Tal correctly higher by " + std::to_string(delta);
                 } else {
-                    note = "FAILED: Petrosian should be higher by " + std::to_string(expected_delta) + ", was " + std::to_string(delta);
+                    note = "FAILED: Tal should be higher by " + std::to_string(expected_delta) + ", was " + std::to_string(delta);
+                }
+            } else if (type == "petrosian_higher") {
+                // Petrosian should be higher, delta should be <= -expected
+                if (delta <= -expected_delta) {
+                    test_passed = true;
+                    note = "Petrosian correctly higher by " + std::to_string(-delta);
+                } else {
+                    note = "FAILED: Petrosian should be higher by " + std::to_string(expected_delta) + ", was " + std::to_string(-delta);
                 }
             }
             
