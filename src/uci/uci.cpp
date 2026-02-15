@@ -527,6 +527,13 @@ void cmd_go(const std::vector<std::string>& tokens) {
                   << " evalMs=" << (Search::g_diag.t_eval / 1000)
                   << " legalityMs=" << (Search::g_diag.t_legality / 1000) << std::endl;
         
+        // EVAL_PROFILE
+        uint64_t evalMs = Search::g_diag.evalTimeNs / 1000000;
+        uint64_t avgUs = (Search::g_diag.evalCalls > 0) ? (Search::g_diag.evalTimeNs / Search::g_diag.evalCalls / 1000) : 0;
+        std::cout << "info string EVAL_PROFILE calls=" << Search::g_diag.evalCalls 
+                  << " totalMs=" << evalMs
+                  << " avgUs=" << avgUs << std::endl;
+        
         std::cout.flush();
     }
 }

@@ -43,6 +43,10 @@ struct SearchDiagnostics {
     uint64_t unmakeMoveCalls = 0;
     uint64_t boardCopies = 0;
     
+    // Evaluation profiling
+    uint64_t evalCalls = 0;
+    uint64_t evalTimeNs = 0;
+    
     // Copy attribution counters
     uint64_t copies_make_return = 0;
     uint64_t copies_board_clone = 0;

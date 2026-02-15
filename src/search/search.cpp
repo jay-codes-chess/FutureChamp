@@ -957,14 +957,29 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
     
     // Check for stop
     if (should_stop()) {
-        return evaluate_position(board, color);
+        // **EVAL PROFILING**
+        auto t_eval_start = std::chrono::steady_clock::now();
+        int result = evaluate_position(board, color);
+        auto t_eval_end = std::chrono::steady_clock::now();
+        if (UCI::options.debug_search_trace) {
+            g_diag.evalCalls++;
+            g_diag.evalTimeNs += std::chrono::duration_cast<std::chrono::nanoseconds>(t_eval_end - t_eval_start).count();
+        }
+        return result;
     }
     
     // Check if in check - MUST generate evasions
     bool in_check = board.is_in_check(color);
     
     // Stand-pat evaluation - only valid when NOT in check
+    // **EVAL PROFILING**
+    auto t_eval_start = std::chrono::steady_clock::now();
     int stand_pat = evaluate_position(board, color);
+    auto t_eval_end = std::chrono::steady_clock::now();
+    if (UCI::options.debug_search_trace) {
+        g_diag.evalCalls++;
+        g_diag.evalTimeNs += std::chrono::duration_cast<std::chrono::nanoseconds>(t_eval_end - t_eval_start).count();
+    }
     
     if (!in_check) {
         if (stand_pat >= beta) return beta;
