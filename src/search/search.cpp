@@ -1488,6 +1488,7 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
     if (UCI::options.singular_ext_enable && 
         depth >= UCI::options.singular_ext_depth_min &&
         tt_move != 0 && 
+        tt_hit &&  // MUST have TT hit to use tt_score
         !in_check) {
         
         // Check if TT move is in our move list and is quiet (not capture/promotion)
