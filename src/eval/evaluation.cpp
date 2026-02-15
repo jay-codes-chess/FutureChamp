@@ -14,6 +14,7 @@
 #include "knowledge.hpp"
 #include "pst.hpp"
 #include "../utils/board.hpp"
+#include "../movegen.hpp"
 #include "../uci/uci.hpp"
 #include <iostream>
 #include <sstream>
@@ -147,6 +148,56 @@ int eval_hanging_pieces(const Board& b) {
     return penalty;  // Already positive = bad for side with hanging piece
 }
 
+// Mobility evaluation - count legal moves for each piece type
+int eval_mobility(const Board& board) {
+    int score = 0;
+    
+    // Weights for mobility
+    const int KNIGHT_MOBILITY = 4;
+    const int BISHOP_MOBILITY = 5;
+    const int ROOK_MOBILITY = 3;
+    const int QUEEN_MOBILITY = 2;
+    
+    // Generate all moves for white
+    MoveList white_moves;
+    generate_moves(board, white_moves);
+    
+    // Count by piece type (from white's perspective - add)
+    for (int i = 0; i < white_moves.count; i++) {
+        int move = white_moves.moves[i];
+        int from = Bitboards::move_from(move);
+        int piece = board.piece_at(from);
+        
+        if (piece == KNIGHT) score += KNIGHT_MOBILITY;
+        else if (piece == BISHOP) score += BISHOP_MOBILITY;
+        else if (piece == ROOK) score += ROOK_MOBILITY;
+        else if (piece == QUEEN) score += QUEEN_MOBILITY;
+    }
+    
+    // For black, we need to generate from black's perspective
+    // Create a temporary board with side to move flipped
+    Board temp = board;
+    temp.side_to_move = 1 - temp.side_to_move;
+    temp.compute_hash();
+    
+    MoveList black_moves;
+    generate_moves(temp, black_moves);
+    
+    // Count by piece type (from black's perspective - subtract)
+    for (int i = 0; i < black_moves.count; i++) {
+        int move = black_moves.moves[i];
+        int from = Bitboards::move_from(move);
+        int piece = temp.piece_at(from);
+        
+        if (piece == KNIGHT) score -= KNIGHT_MOBILITY;
+        else if (piece == BISHOP) score -= BISHOP_MOBILITY;
+        else if (piece == ROOK) score -= ROOK_MOBILITY;
+        else if (piece == QUEEN) score -= QUEEN_MOBILITY;
+    }
+    
+    return score;
+}
+
 static StyleWeights current_weights;
 static std::string current_style = "classical";
 static bool debug_trace_enabled = false;
@@ -274,6 +325,9 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     // hanging is positive = bad for side with hanging piece
     // So subtract from our score
     score -= bd.hanging;
+    
+    // Mobility evaluation
+    score += eval_mobility(board);
     
     bd.total = score;
     
