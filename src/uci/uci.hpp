@@ -75,7 +75,7 @@ struct Options {
     bool debug_eval_cache = false;
     
     // QSearch Checks
-    bool qsearch_checks_enable = true;
+    bool qsearch_checks_enable = false;
     int qsearch_checks_plies = 2;
     int qsearch_check_see_threshold = -50;
     
