@@ -1616,26 +1616,9 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
                 restore_delta(board, u);
             }
         } else {
-            // Normal search
-            // **Check Extension**: extend depth for checks at deeper plies
-            int search_depth = depth - 1;
-            if (UCI::options.check_ext_enable && depth >= UCI::options.check_ext_depth_min) {
-                // Check if this move gives check
-                make_move_inplace(board, move);
-                bool gives_check_ext = board.is_in_check(1 - color);
-                restore_delta(board, u);
-                
-                if (gives_check_ext) {
-                    search_depth += 1;  // Extend by 1
-                    if (UCI::options.debug_pruning_trace) {
-                        std::cout << "info string CHECK_EXT move=" << Bitboards::move_to_uci(move) 
-                                  << " depth=" << depth << "->" << search_depth + 1 << std::endl;
-                    }
-                }
-            }
-            
+            // Normal search - use base_depth which includes singular extension
             make_move_inplace(board, move);
-            score = -alpha_beta(board, search_depth, -beta, -alpha, 1 - color, true);
+            score = -alpha_beta(board, base_depth, -beta, -alpha, 1 - color, true);
             restore_delta(board, u);
         }
         
