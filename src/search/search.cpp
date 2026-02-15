@@ -1786,6 +1786,7 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
                 params.risk_appetite,
                 params.sacrifice_bias,
                 params.simplicity_bias,
+                params.trade_bias,
                 params.random_seed,
                 params.debug_human_pick
             );

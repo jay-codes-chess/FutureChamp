@@ -52,6 +52,7 @@ int pick_human_move(
     int risk_appetite,
     int sacrifice_bias,
     int simplicity_bias,
+    int trade_bias,
     int random_seed,
     bool debug_output
 );

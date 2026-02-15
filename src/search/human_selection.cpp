@@ -212,6 +212,7 @@ int pick_human_move(
     int risk_appetite,
     int sacrifice_bias,
     int simplicity_bias,
+    int trade_bias,
     int random_seed,
     bool debug_output
 ) {
@@ -260,6 +261,22 @@ int pick_human_move(
             double simplicity_boost = (simplicity_bias - 100) / 100.0;
             if (c.score < best_score - 50) {
                 weight *= (1.0 - simplicity_boost * 0.3);
+            }
+        }
+        
+        // **TradeBias**: Apply probability bias for trades
+        if (trade_bias != 100) {
+            Board* board = static_cast<Board*>(board_ptr);
+            int captured = board->piece_at(Bitboards::move_to(c.move));
+            bool is_trade_move = (captured != NO_PIECE);
+            
+            if (is_trade_move) {
+                // TradeBias > 100: increase probability of trades
+                // TradeBias < 100: decrease probability of trades
+                double trade_mult = trade_bias / 100.0;
+                // Clamp to 0.5-1.5 to avoid extreme distortion
+                trade_mult = std::max(0.5, std::min(1.5, trade_mult));
+                weight *= trade_mult;
             }
         }
         

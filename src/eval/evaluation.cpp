@@ -88,6 +88,22 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     if (board.side_to_move == WHITE) score += 10;
     else score -= 10;
     
+    // **TradeBias "simplify when better"**: Encourage/discourage trading when ahead
+    // Small effect (10-30cp) - this is a style nudge, not tactical
+    int simplify_factor = 15;  // centipawns
+    int material_balance = bd.material;  // positive = white ahead
+    int trade_bias = get_params().trade_bias;
+    
+    if (trade_bias != 100 && material_balance > 100) {
+        // White ahead - TradeBias > 100 encourages simplifying (trading)
+        int simplify_bonus = (trade_bias - 100) * simplify_factor / 100;
+        score += simplify_bonus;
+    } else if (trade_bias != 100 && material_balance < -100) {
+        // Black ahead - TradeBias > 100 encourages simplifying
+        int simplify_bonus = (trade_bias - 100) * simplify_factor / 100;
+        score -= simplify_bonus;
+    }
+    
     bd.total = score;
     
     return bd;
