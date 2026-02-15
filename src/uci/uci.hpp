@@ -54,6 +54,7 @@ struct Options {
     // IID (Internal Iterative Deepening)
     bool iid_enable = true;
     int iid_depth_min = 5;
+    int iid_reduction = 2;
     
     // PVS (Principal Variation Search)
     bool pvs_enable = true;
@@ -67,6 +68,22 @@ struct Options {
     
     // Null Move Verification
     bool null_move_verify = true;
+    
+    // Eval Cache
+    bool eval_cache_enable = true;
+    int eval_cache_mb = 16;
+    bool debug_eval_cache = false;
+    
+    // QSearch Checks
+    bool qsearch_checks_enable = true;
+    int qsearch_checks_plies = 2;
+    int qsearch_check_see_threshold = -50;
+    
+    // Singular Extensions
+    bool singular_ext_enable = true;
+    int singular_ext_depth_min = 6;
+    int singular_ext_margin_cp = 60;
+    int singular_ext_verification_reduction = 2;
     
     // Time management
     int move_overhead = 30;

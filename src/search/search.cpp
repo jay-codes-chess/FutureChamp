@@ -322,6 +322,59 @@ struct TTEntry {
 static const int TT_SIZE = 1 << 20;  // 1M entries
 static TTEntry* transposition_table;
 
+// Eval Cache - separate from TT for storing evaluation scores
+struct EvalCacheEntry {
+    uint64_t hash;
+    int16_t score;
+    uint8_t flags;  // bit 0: valid, bits 1-2: eval mode (0=FAST,1=MED,2=FULL)
+};
+
+static const int EVAL_CACHE_SIZE = 1 << 16;  // 64K entries default
+static EvalCacheEntry* eval_cache = NULL;
+
+// Initialize eval cache
+void init_eval_cache(int size_mb) {
+    int entries = (size_mb * 1024 * 1024) / sizeof(EvalCacheEntry);
+    if (entries < 1024) entries = 1024;
+    eval_cache = new EvalCacheEntry[entries];
+    for (int i = 0; i < entries; i++) {
+        eval_cache[i].hash = 0;
+        eval_cache[i].score = 0;
+        eval_cache[i].flags = 0;
+    }
+}
+
+// Probe eval cache
+int probe_eval_cache(uint64_t hash, int* hit) {
+    if (!UCI::options.eval_cache_enable || !eval_cache) {
+        *hit = 0;
+        return 0;
+    }
+    
+    g_diag.evalCacheProbes++;
+    
+    int idx = hash & (EVAL_CACHE_SIZE - 1);
+    if (eval_cache[idx].hash == hash && (eval_cache[idx].flags & 1)) {
+        g_diag.evalCacheHits++;
+        *hit = 1;
+        return eval_cache[idx].score;
+    }
+    *hit = 0;
+    return 0;
+}
+
+// Store in eval cache
+void store_eval_cache(uint64_t hash, int score) {
+    if (!UCI::options.eval_cache_enable || !eval_cache) return;
+    
+    g_diag.evalCacheStores++;
+    
+    int idx = hash & (EVAL_CACHE_SIZE - 1);
+    eval_cache[idx].hash = hash;
+    eval_cache[idx].score = (int16_t)score;
+    eval_cache[idx].flags = 1;  // valid
+}
+
 // Killer moves - moves that caused cutoffs at sibling nodes
 static int killer_moves[64][2];  // [depth][2 killer moves]
 
@@ -354,6 +407,9 @@ void initialize() {
         transposition_table[i].move = 0;
         transposition_table[i].flag = 0;
     }
+    // Initialize eval cache
+    init_eval_cache(UCI::options.eval_cache_mb);
+    
     // Initialize history and killer tables
     for (int i = 0; i < 64; i++) {
         for (int j = 0; j < 64; j++) {
@@ -538,7 +594,15 @@ int evaluate_position(const Board& board, int color) {
         return (board.side_to_move == WHITE) ? contempt_score : -contempt_score;
     }
     
+    // Try eval cache
+    int cache_hit = 0;
+    int cached_score = probe_eval_cache(board.hash, &cache_hit);
+    if (cache_hit) {
+        return (color == WHITE) ? cached_score : -cached_score;
+    }
+    
     int score = Evaluation::evaluate(board);
+    store_eval_cache(board.hash, score);
     return (color == WHITE) ? score : -score;
 }
 
@@ -551,7 +615,22 @@ int evaluate_position(const Board& board, int color, Evaluation::EvalMode mode) 
         return (board.side_to_move == WHITE) ? contempt_score : -contempt_score;
     }
     
+    // Try eval cache (only for FULL mode)
+    if (mode == Evaluation::EvalMode::FULL) {
+        int cache_hit = 0;
+        int cached_score = probe_eval_cache(board.hash, &cache_hit);
+        if (cache_hit) {
+            return (color == WHITE) ? cached_score : -cached_score;
+        }
+    }
+    
     int score = Evaluation::evaluate(board, mode);
+    
+    // Store in cache only for FULL evaluations
+    if (mode == Evaluation::EvalMode::FULL) {
+        store_eval_cache(board.hash, score);
+    }
+    
     return (color == WHITE) ? score : -score;
 }
 

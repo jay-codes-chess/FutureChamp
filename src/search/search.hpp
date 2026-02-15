@@ -55,6 +55,16 @@ struct SearchDiagnostics {
     uint64_t killerHits = 0;
     uint64_t historyHits = 0;
     
+    // Eval cache stats
+    uint64_t evalCacheProbes = 0;
+    uint64_t evalCacheHits = 0;
+    uint64_t evalCacheStores = 0;
+    double evalCacheHitRate = 0.0;
+    
+    // QSearch check stats
+    uint64_t qChecksSearched = 0;
+    uint64_t qChecksSkipped = 0;
+    
     // Copy attribution counters
     uint64_t copies_make_return = 0;
     uint64_t copies_board_clone = 0;

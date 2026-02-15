@@ -236,6 +236,7 @@ void cmd_uci() {
     // IID and PVS
     std::cout << "option name IIDEnable type check default true" << std::endl;
     std::cout << "option name IIDDepthMin type spin default 5 min 3 max 10" << std::endl;
+    std::cout << "option name IIDReduction type spin default 2 min 1 max 4" << std::endl;
     std::cout << "option name PVSEnable type check default true" << std::endl;
     
     // LMP, Razoring, Null Verify
@@ -243,6 +244,22 @@ void cmd_uci() {
     std::cout << "option name LMPMoveCount type spin default 6 min 3 max 12" << std::endl;
     std::cout << "option name RazorEnable type check default true" << std::endl;
     std::cout << "option name NullMoveVerify type check default true" << std::endl;
+    
+    // Eval Cache
+    std::cout << "option name EvalCacheEnable type check default true" << std::endl;
+    std::cout << "option name EvalCacheMB type spin default 16 min 1 max 64" << std::endl;
+    std::cout << "option name DebugEvalCache type check default false" << std::endl;
+    
+    // QSearch Checks
+    std::cout << "option name QSearchChecksEnable type check default true" << std::endl;
+    std::cout << "option name QSearchChecksPlies type spin default 2 min 0 max 2" << std::endl;
+    std::cout << "option name QSearchCheckSEEThreshold type spin default -50 min -200 max 0" << std::endl;
+    
+    // Singular Extensions
+    std::cout << "option name SingExtEnable type check default true" << std::endl;
+    std::cout << "option name SingExtDepthMin type spin default 6 min 4 max 10" << std::endl;
+    std::cout << "option name SingExtMarginCp type spin default 60 min 30 max 150" << std::endl;
+    std::cout << "option name SingExtVerificationReduction type spin default 2 min 1 max 4" << std::endl;
     
     // Time management
     std::cout << "option name MoveOverhead type spin default 30 min 0 max 200" << std::endl;
@@ -733,6 +750,8 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
         options.iid_enable = (value == "true");
     } else if (name == "IIDDepthMin") {
         options.iid_depth_min = std::stoi(value);
+    } else if (name == "IIDReduction") {
+        options.iid_reduction = std::stoi(value);
     } else if (name == "PVSEnable") {
         options.pvs_enable = (value == "true");
     } else if (name == "LMPEnable") {
@@ -743,6 +762,26 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
         options.razor_enable = (value == "true");
     } else if (name == "NullMoveVerify") {
         options.null_move_verify = (value == "true");
+    } else if (name == "EvalCacheEnable") {
+        options.eval_cache_enable = (value == "true");
+    } else if (name == "EvalCacheMB") {
+        options.eval_cache_mb = std::stoi(value);
+    } else if (name == "DebugEvalCache") {
+        options.debug_eval_cache = (value == "true");
+    } else if (name == "QSearchChecksEnable") {
+        options.qsearch_checks_enable = (value == "true");
+    } else if (name == "QSearchChecksPlies") {
+        options.qsearch_checks_plies = std::stoi(value);
+    } else if (name == "QSearchCheckSEEThreshold") {
+        options.qsearch_check_see_threshold = std::stoi(value);
+    } else if (name == "SingExtEnable") {
+        options.singular_ext_enable = (value == "true");
+    } else if (name == "SingExtDepthMin") {
+        options.singular_ext_depth_min = std::stoi(value);
+    } else if (name == "SingExtMarginCp") {
+        options.singular_ext_margin_cp = std::stoi(value);
+    } else if (name == "SingExtVerificationReduction") {
+        options.singular_ext_verification_reduction = std::stoi(value);
     } else if (name == "MoveOverhead") {
         options.move_overhead = std::stoi(value);
     } else if (name == "MinThinkMs") {
