@@ -59,6 +59,7 @@ struct Params {
     int risk_appetite = 100;            // 0-200 - Tal high, Petrosian low
     int sacrifice_bias = 100;            // 0-200 - ties to MaterialPriority
     int simplicity_bias = 100;           // 0-200 - Capa higher
+    int trade_bias = 100;               // 0-200 - willingness to trade pieces
     
     // === HUMAN GUARDRAILS ===
     int human_hard_floor_cp = 200;       // 0-600 - drop candidates worse than best-foor

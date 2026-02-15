@@ -200,6 +200,7 @@ void cmd_uci() {
     std::cout << "option name RiskAppetite type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name SacrificeBias type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name SimplicityBias type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name TradeBias type spin default 100 min 0 max 200" << std::endl;
     
     // === HUMAN GUARDRAILS ===
     std::cout << "option name HumanHardFloorCp type spin default 200 min 0 max 600" << std::endl;

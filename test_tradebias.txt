@@ -1,0 +1,4 @@
+uci
+setoption name TradeBias value 180
+go depth 4
+quit

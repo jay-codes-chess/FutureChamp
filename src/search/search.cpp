@@ -764,6 +764,18 @@ int get_piece_value(int piece) {
     }
 }
 
+// **NEW**: Check if move is a trade (capture of similar or higher value)
+inline bool is_trade(const Board& board, int move) {
+    int captured = board.piece_at(Bitboards::move_to(move));
+    if (captured == NO_PIECE) return false;
+    
+    int attacker_value = get_piece_value(board.piece_at(Bitboards::move_from(move)));
+    int victim_value = get_piece_value(captured);
+    
+    // Trade if victim is at least as valuable as attacker (within tolerance)
+    return (victim_value >= attacker_value - 100);
+}
+
 // **NEW**: Static Exchange Evaluation - evaluate material exchanges on a square
 // Returns estimated material gain/loss from a capture sequence
 
@@ -895,6 +907,11 @@ int score_move_for_order(Board& board, int move, int tt_move, int depth) {
     score = history_scores[from][to];
     if (score > 0) {
         g_diag.historyHits++;
+    }
+    
+    // **TradeBias bonus** - encourage or discourage trades based on preference
+    if (is_trade(board, move)) {
+        score += (Evaluation::get_params().trade_bias - 100) * 4;
     }
     
     // 6. Bonus for moving toward center in opening
