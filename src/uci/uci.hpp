@@ -34,6 +34,18 @@ struct Options {
     bool eval_tiering = true;
     int eval_fast_depth_threshold = 3;
     std::string eval_qsearch_mode = "MED";  // "FAST" or "MED"
+    
+    // **SEARCH PRUNING**
+    bool debug_pruning_trace = false;
+    bool lmr_enable = true;
+    int lmr_move_index = 4;
+    int lmr_depth_min = 3;
+    int lmr_base_reduction = 1;
+    bool null_move_enable = true;
+    int null_move_r = 2;
+    bool futility_enable = true;
+    int futility_margin1 = 120;
+    int futility_margin2 = 240;
 };
 
 extern Options options;

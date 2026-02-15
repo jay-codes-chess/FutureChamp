@@ -1295,7 +1295,7 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
     // - Already did null move in parent
     // - In endgame (low material)
     // - Depth too low
-    if (allow_null && !in_check && depth >= 3) {
+    if (UCI::options.null_move_enable && allow_null && !in_check && depth >= 3) {
         // Check if we have enough material for null move (not in endgame)
         int our_material = 0;
         for (int sq = 0; sq < 64; sq++) {
@@ -1318,7 +1318,7 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
             board.compute_hash();
             
             // Search with reduced depth
-            int R = 2;  // Reduction factor
+            int R = UCI::options.null_move_r;
             int null_score = -alpha_beta(board, depth - 1 - R, -beta, -beta + 1, 1 - color, false);
             
             // Restore null move state
@@ -1355,6 +1355,37 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
     // Order moves
     order_moves(moves, board, tt_move, depth);
     
+    // **Futility pruning**: at shallow depths, prune quiet moves that are far behind
+    if (UCI::options.futility_enable && depth <= 2 && !in_check) {
+        int futility_margin = (depth == 1) ? UCI::options.futility_margin1 : UCI::options.futility_margin2;
+        
+        // Quick eval for futility
+        int quick_eval = evaluate_position(board, color, Evaluation::EvalMode::FAST);
+        
+        // Filter moves - remove quiet moves that can't improve
+        std::vector<int> futility_filtered;
+        for (int move : moves) {
+            int to = Bitboards::move_to(move);
+            bool is_quiet = (board.piece_at(to) == NO_PIECE && !Bitboards::is_promotion(move));
+            
+            if (is_quiet) {
+                int move_score = quick_eval + futility_margin;
+                if (move_score <= alpha) {
+                    if (UCI::options.debug_pruning_trace) {
+                        std::cout << "info string FUTILITY depth=" << depth << " move=" << Bitboards::move_to_uci(move) 
+                                  << " quick_eval=" << quick_eval << " margin=" << futility_margin << " alpha=" << alpha << std::endl;
+                    }
+                    continue;  // Skip - won't improve
+                }
+            }
+            futility_filtered.push_back(move);
+        }
+        moves = futility_filtered;
+        if (moves.empty()) {
+            return quick_eval;
+        }
+    }
+    
     int best_move = moves[0];
     int best_score = -std::numeric_limits<int>::max();
     int flag = 1;  // alpha
@@ -1375,13 +1406,25 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
         int move_idx = &move - &moves[0];
         int score;
         
-        // LMR conditions: depth >= 3, not in check, quiet move (not capture), not first 3 moves
+        // LMR conditions: depth >= LMRDepthMin, not in check, quiet move, not first N moves
         bool is_quiet = (board.piece_at(Bitboards::move_to(move)) == NO_PIECE && !Bitboards::is_promotion(move));
-        bool lmr_candidate = (depth >= 3 && !in_check && is_quiet && move_idx >= 3);
+        bool lmr_candidate = UCI::options.lmr_enable && 
+                           (depth >= UCI::options.lmr_depth_min) && 
+                           !in_check && 
+                           is_quiet && 
+                           (move_idx >= UCI::options.lmr_move_index);
         
         if (lmr_candidate) {
             // Try reduced depth search
-            int r = 1;  // Simple reduction
+            int r = UCI::options.lmr_base_reduction;
+            // Extra reduction for very late moves at deeper depths
+            if (depth >= 6 && move_idx >= 8) r = 2;
+            
+            if (UCI::options.debug_pruning_trace) {
+                std::cout << "info string LMR depth=" << depth << " move=" << Bitboards::move_to_uci(move) 
+                          << " idx=" << move_idx << " r=" << r << std::endl;
+            }
+            
             make_move_inplace(board, move);
             score = -alpha_beta(board, depth - 1 - r, -beta, -alpha, 1 - color, true);
             restore_delta(board, u);

@@ -216,6 +216,18 @@ void cmd_uci() {
     std::cout << "option name EvalFastDepthThreshold type spin default 3 min 0 max 10" << std::endl;
     std::cout << "option name EvalQSearchMode type combo default FAST var FAST var MED" << std::endl;
     
+    // **SEARCH PRUNING OPTIONS**
+    std::cout << "option name DebugPruningTrace type check default false" << std::endl;
+    std::cout << "option name LMREnable type check default true" << std::endl;
+    std::cout << "option name LMRMoveIndex type spin default 4 min 2 max 12" << std::endl;
+    std::cout << "option name LMRDepthMin type spin default 3 min 2 max 8" << std::endl;
+    std::cout << "option name LMRBaseReduction type spin default 1 min 1 max 3" << std::endl;
+    std::cout << "option name NullMoveEnable type check default true" << std::endl;
+    std::cout << "option name NullMoveR type spin default 2 min 1 max 3" << std::endl;
+    std::cout << "option name FutilityEnable type check default true" << std::endl;
+    std::cout << "option name FutilityMargin1 type spin default 120 min 0 max 500" << std::endl;
+    std::cout << "option name FutilityMargin2 type spin default 240 min 0 max 1000" << std::endl;
+    
     std::cout << "info string BUILD_FLAGS -O2 -DNDEBUG -std=c++17 -static" << std::endl;
     std::cout << "uciok" << std::endl;
     std::cout.flush();
@@ -618,6 +630,26 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
         options.eval_fast_depth_threshold = std::stoi(value);
     } else if (name == "EvalQSearchMode") {
         options.eval_qsearch_mode = value;
+    } else if (name == "DebugPruningTrace") {
+        options.debug_pruning_trace = (value == "true");
+    } else if (name == "LMREnable") {
+        options.lmr_enable = (value == "true");
+    } else if (name == "LMRMoveIndex") {
+        options.lmr_move_index = std::stoi(value);
+    } else if (name == "LMRDepthMin") {
+        options.lmr_depth_min = std::stoi(value);
+    } else if (name == "LMRBaseReduction") {
+        options.lmr_base_reduction = std::stoi(value);
+    } else if (name == "NullMoveEnable") {
+        options.null_move_enable = (value == "true");
+    } else if (name == "NullMoveR") {
+        options.null_move_r = std::stoi(value);
+    } else if (name == "FutilityEnable") {
+        options.futility_enable = (value == "true");
+    } else if (name == "FutilityMargin1") {
+        options.futility_margin1 = std::stoi(value);
+    } else if (name == "FutilityMargin2") {
+        options.futility_margin2 = std::stoi(value);
     } else if (name == "DebugTraceWithParams") {
         Evaluation::set_param("DebugTraceWithParams", value);
     } else if (name == "PersonalityAutoLoad") {
