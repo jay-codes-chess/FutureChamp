@@ -51,6 +51,7 @@ struct ScoreBreakdown {
     int king_danger = 0;  // Enemy king danger
     int development = 0;   // Opening development urgency
     int pst = 0;          // Piece-square tables score
+    int hanging = 0;      // Hanging piece penalty
     int imbalance = 0;
     int initiative = 0;
     int knowledge = 0;

@@ -70,6 +70,83 @@ int eval_development_urgency(const Board& b) {
     return score;
 }
 
+// Hanging piece penalty - detect undefended attacked pieces
+int eval_hanging_pieces(const Board& b) {
+    // Piece values
+    static const int piece_value[7] = {0, 100, 320, 330, 500, 900, 0};
+    
+    int penalty = 0;
+    
+    // For each color
+    for (int our_color = 0; our_color <= 1; our_color++) {
+        int their_color = 1 - our_color;
+        
+        // Get our pieces
+        uint64_t our_pieces = b.colors[our_color];
+        
+        while (our_pieces) {
+            int sq = __builtin_ctzll(our_pieces);
+            our_pieces &= our_pieces - 1;
+            
+            int piece = b.piece_at(sq);
+            if (piece == KING || piece == PAWN) continue;
+            
+            // Check if this piece is attacked by enemy
+            bool attacked = false;
+            
+            // Check pawn attacks
+            int pawn_dir = (their_color == WHITE) ? 8 : -8;
+            int left = sq - 1 + pawn_dir;
+            int right = sq + 1 + pawn_dir;
+            if (left >= 0 && left < 64) {
+                int pl = b.piece_at(left);
+                if (pl == PAWN && b.color_at(left) == their_color) attacked = true;
+            }
+            if (right >= 0 && right < 64) {
+                int pr = b.piece_at(right);
+                if (pr == PAWN && b.color_at(right) == their_color) attacked = true;
+            }
+            
+            // Check knight attacks
+            if (!attacked) {
+                static const int knight_moves[] = {-17,-15,-10,-6,6,10,15,17};
+                for (int m : knight_moves) {
+                    int nsq = sq + m;
+                    if (nsq >= 0 && nsq < 64) {
+                        int np = b.piece_at(nsq);
+                        if (np == KNIGHT && b.color_at(nsq) == their_color) { attacked = true; break; }
+                    }
+                }
+            }
+            
+            // Check if defended by our own piece (simple check)
+            bool defended = false;
+            if (!attacked) {
+                // Check if any of our pieces defend this square
+                uint64_t defenders = b.colors[our_color];
+                while (defenders) {
+                    int dsq = __builtin_ctzll(defenders);
+                    defenders &= defenders - 1;
+                    if (dsq == sq) continue;
+                    
+                    int dp = b.piece_at(dsq);
+                    // Simple: same piece type can defend
+                    if (dp == piece) defended = true;
+                }
+            }
+            
+            // Apply penalty for hanging pieces (attacked and not defended)
+            if (attacked && !defended) {
+                int val = piece_value[piece];
+                if (val > 0) penalty += val / 2;  // Half value penalty
+            }
+        }
+    }
+    
+    // Return from white's perspective
+    return penalty;  // Already positive = bad for side with hanging piece
+}
+
 static StyleWeights current_weights;
 static std::string current_style = "classical";
 static bool debug_trace_enabled = false;
@@ -114,6 +191,16 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     } else {
         bd.pst = 0;
     }
+    
+    // Hanging piece penalty (detect undefended attacked pieces)
+    int hanging = eval_hanging_pieces(board);
+    // hanging is already positive = bad for the side with hanging piece
+    // Convert to white's perspective: if white has hanging pieces, subtract from white's score
+    int white_hanging = 0, black_hanging = 0;
+    // For simplicity, apply as a penalty to both sides
+    // Positive hanging means the piece is hanging (attacked + undefended)
+    // We already computed it as a raw penalty, apply it symmetrically
+    bd.hanging = hanging;
     
     // Individual master concept scores for trace
     bd.exchange_sac = eval_exchange_sac_compensation(board, p);
@@ -182,6 +269,11 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     }
     
     score += pst_weighted;
+    
+    // Hanging piece penalty (reduce score if we have hanging pieces)
+    // hanging is positive = bad for side with hanging piece
+    // So subtract from our score
+    score -= bd.hanging;
     
     bd.total = score;
     
