@@ -1104,9 +1104,19 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
             
             // Only include captures and promotions
             if (captured != NO_PIECE || Bitboards::is_promotion(move)) {
-                // **SEE filter**: skip obviously bad captures (losing more than a pawn)
+                // **TradeBias SEE threshold**: Adjust based on trading preference
+                // TradeBias < 100: allow slightly negative SEE (complexity)
+                // TradeBias > 100: require positive SEE (simplify)
+                int see_threshold = 0;
+                int trade_bias = Evaluation::get_params().trade_bias;
+                if (trade_bias < 100) {
+                    see_threshold = -50 * (100 - trade_bias) / 100;
+                } else if (trade_bias > 100) {
+                    see_threshold = 20 * (trade_bias - 100) / 100;
+                }
+                
                 int see_score = see(board, move);
-                if (see_score < -100) {
+                if (see_score < see_threshold) {
                     g_diag.qCapturesSkippedSEE++;
                     continue;  // Skip bad captures
                 }
