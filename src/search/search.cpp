@@ -329,13 +329,14 @@ struct EvalCacheEntry {
     uint8_t flags;  // bit 0: valid, bits 1-2: eval mode (0=FAST,1=MED,2=FULL)
 };
 
-static const int EVAL_CACHE_SIZE = 1 << 16;  // 64K entries default
+static int g_eval_cache_size = 1 << 16;  // Default 64K entries
 static EvalCacheEntry* eval_cache = NULL;
 
 // Initialize eval cache
 void init_eval_cache(int size_mb) {
     int entries = (size_mb * 1024 * 1024) / sizeof(EvalCacheEntry);
     if (entries < 1024) entries = 1024;
+    g_eval_cache_size = entries;  // Store actual size
     eval_cache = new EvalCacheEntry[entries];
     for (int i = 0; i < entries; i++) {
         eval_cache[i].hash = 0;
@@ -353,7 +354,7 @@ int probe_eval_cache(uint64_t hash, int* hit) {
     
     g_diag.evalCacheProbes++;
     
-    int idx = hash & (EVAL_CACHE_SIZE - 1);
+    int idx = hash & (g_eval_cache_size - 1);
     if (eval_cache[idx].hash == hash && (eval_cache[idx].flags & 1)) {
         g_diag.evalCacheHits++;
         *hit = 1;
@@ -369,7 +370,7 @@ void store_eval_cache(uint64_t hash, int score) {
     
     g_diag.evalCacheStores++;
     
-    int idx = hash & (EVAL_CACHE_SIZE - 1);
+    int idx = hash & (g_eval_cache_size - 1);
     eval_cache[idx].hash = hash;
     eval_cache[idx].score = (int16_t)score;
     eval_cache[idx].flags = 1;  // valid
