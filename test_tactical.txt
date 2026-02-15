@@ -1,0 +1,4 @@
+uci
+position fen rnbqkbnr/pppppppp/8/8/4q3/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+go depth 6
+quit

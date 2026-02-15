@@ -1259,6 +1259,15 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
         
         restore_delta(board, u);
         
+        // **SEARCH STATE CORRUPTION DETECTOR**
+        if (UCI::options.debug_search_trace) {
+            // Quick sanity check - verify hash matches
+            // Full integrity check would be expensive, so just spot check
+            if (board.hash == 0) {
+                std::cout << "info string UNDO_MISMATCH hash=0" << std::endl;
+            }
+        }
+        
         if (score > best_score) {
             best_score = score;
             best_move = move;
@@ -1699,6 +1708,40 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
             for (int m : all_moves) {
                 if (is_legal(board, m)) {
                     result.best_move = m;
+                    break;
+                }
+            }
+        }
+    }
+    
+    // **ILLEGAL MOVE HARDENING**: Validate best_move before returning
+    if (result.best_move != 0) {
+        // Validate move is legal
+        bool move_is_legal = false;
+        MoveList legal_moves; generate_moves(board, legal_moves);
+        for (int i = 0; i < legal_moves.count; i++) {
+            if (legal_moves.moves[i] == result.best_move) {
+                if (is_legal(board, result.best_move)) {
+                    move_is_legal = true;
+                }
+                break;
+            }
+        }
+        
+        if (!move_is_legal) {
+            // Illegal move detected - log and find fallback
+            if (UCI::options.debug_search_trace) {
+                std::cout << "info string ILLEGAL_BESTMOVE " 
+                          << Bitboards::move_to_uci(result.best_move)
+                          << " fen=" << board.get_fen()
+                          << " key=" << board.hash << std::endl;
+            }
+            
+            // Fallback to first legal move
+            result.best_move = 0;
+            for (int i = 0; i < legal_moves.count; i++) {
+                if (is_legal(board, legal_moves.moves[i])) {
+                    result.best_move = legal_moves.moves[i];
                     break;
                 }
             }

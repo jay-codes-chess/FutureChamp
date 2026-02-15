@@ -1,0 +1,5 @@
+uci
+setoption name DebugSearchTrace true
+position startpos
+go depth 8
+quit
