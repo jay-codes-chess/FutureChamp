@@ -251,7 +251,7 @@ void cmd_uci() {
     std::cout << "option name DebugEvalCache type check default false" << std::endl;
     
     // QSearch Checks
-    std::cout << "option name QSearchChecksEnable type check default true" << std::endl;
+    std::cout << "option name QSearchChecksEnable type check default false" << std::endl;
     std::cout << "option name QSearchChecksPlies type spin default 2 min 0 max 2" << std::endl;
     std::cout << "option name QSearchCheckSEEThreshold type spin default -50 min -200 max 0" << std::endl;
     std::cout << "option name DebugTacticalTrace type check default false" << std::endl;
