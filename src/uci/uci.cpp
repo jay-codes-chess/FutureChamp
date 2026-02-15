@@ -238,6 +238,12 @@ void cmd_uci() {
     std::cout << "option name IIDDepthMin type spin default 5 min 3 max 10" << std::endl;
     std::cout << "option name PVSEnable type check default true" << std::endl;
     
+    // LMP, Razoring, Null Verify
+    std::cout << "option name LMPEnable type check default true" << std::endl;
+    std::cout << "option name LMPMoveCount type spin default 6 min 3 max 12" << std::endl;
+    std::cout << "option name RazorEnable type check default true" << std::endl;
+    std::cout << "option name NullMoveVerify type check default true" << std::endl;
+    
     // Time management
     std::cout << "option name MoveOverhead type spin default 30 min 0 max 200" << std::endl;
     std::cout << "option name MinThinkMs type spin default 20 min 0 max 2000" << std::endl;
@@ -729,6 +735,14 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
         options.iid_depth_min = std::stoi(value);
     } else if (name == "PVSEnable") {
         options.pvs_enable = (value == "true");
+    } else if (name == "LMPEnable") {
+        options.lmp_enable = (value == "true");
+    } else if (name == "LMPMoveCount") {
+        options.lmp_move_count = std::stoi(value);
+    } else if (name == "RazorEnable") {
+        options.razor_enable = (value == "true");
+    } else if (name == "NullMoveVerify") {
+        options.null_move_verify = (value == "true");
     } else if (name == "MoveOverhead") {
         options.move_overhead = std::stoi(value);
     } else if (name == "MinThinkMs") {

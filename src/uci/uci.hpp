@@ -58,6 +58,16 @@ struct Options {
     // PVS (Principal Variation Search)
     bool pvs_enable = true;
     
+    // LMP (Late Move Pruning)
+    bool lmp_enable = true;
+    int lmp_move_count = 6;
+    
+    // Razoring
+    bool razor_enable = true;
+    
+    // Null Move Verification
+    bool null_move_verify = true;
+    
     // Time management
     int move_overhead = 30;
     int min_think_ms = 20;
