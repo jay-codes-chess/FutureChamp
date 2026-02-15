@@ -247,6 +247,13 @@ void cmd_uci() {
     std::cout << "option name KingDangerRingAttackBonus type spin default 100 min 0 max 200" << std::endl;
     std::cout << "option name KingDangerShieldPenalty type spin default 100 min 0 max 200" << std::endl;
     
+    // PST (Piece-Square Tables)
+    std::cout << "option name W_PST type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name PSTCenterBias type spin default 120 min 0 max 200" << std::endl;
+    std::cout << "option name PstKnightEdgePenalty type spin default 130 min 0 max 200" << std::endl;
+    std::cout << "option name PstOpeningOnly type check default false" << std::endl;
+    std::cout << "option name DebugPSTTrace type check default false" << std::endl;
+    
     std::cout << "info string BUILD_FLAGS -O2 -DNDEBUG -std=c++17 -static" << std::endl;
     std::cout << "uciok" << std::endl;
     std::cout.flush();
@@ -727,6 +734,17 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
         options.king_danger_ring_bonus = std::stoi(value);
     } else if (name == "KingDangerShieldPenalty") {
         options.king_danger_shield_penalty = std::stoi(value);
+    } else if (name == "W_PST") {
+        options.w_pst = std::stoi(value);
+    } else if (name == "PSTCenterBias") {
+        options.pst_center_bias = std::stoi(value);
+    } else if (name == "PstKnightEdgePenalty") {
+        options.pst_knight_edge_penalty = std::stoi(value);
+    } else if (name == "PstOpeningOnly") {
+        options.pst_opening_only = (value == "true");
+    } else if (name == "DebugPSTTrace") {
+        options.debug_pst_trace = (value == "true");
+        Evaluation::get_params().debug_pst_trace = (value == "true");
     } else if (name == "DebugTraceWithParams") {
         Evaluation::set_param("DebugTraceWithParams", value);
     } else if (name == "PersonalityAutoLoad") {

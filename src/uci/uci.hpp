@@ -64,6 +64,13 @@ struct Options {
     int w_king_danger = 100;
     int king_danger_ring_bonus = 100;
     int king_danger_shield_penalty = 100;
+    
+    // PST (Piece-Square Tables)
+    int w_pst = 100;
+    int pst_center_bias = 120;
+    int pst_knight_edge_penalty = 130;
+    bool pst_opening_only = false;
+    bool debug_pst_trace = false;
 };
 
 extern Options options;

@@ -69,6 +69,13 @@ struct Params {
     // === DEBUG ===
     bool debug_trace_with_params = false;  // Include params in trace output
     bool debug_human_pick = false;        // Debug human move selection
+    bool debug_pst_trace = false;          // Debug PST output
+    
+    // === PST (PIECE-SQUARE TABLES) ===
+    int w_pst = 100;                      // 0-200 - global weight for PST
+    int pst_center_bias = 120;            // 0-200 - extra centralisation bonus
+    int pst_knight_edge_penalty = 130;    // 0-200 - punish knights on edges
+    bool pst_opening_only = false;         // Only apply PST in opening phase
     
     // === PERSONALITY ===
     std::string current_personality = "default";  // Current loaded personality

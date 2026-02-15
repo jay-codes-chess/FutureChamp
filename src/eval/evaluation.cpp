@@ -12,6 +12,7 @@
 #include "initiative.hpp"
 #include "params.hpp"
 #include "knowledge.hpp"
+#include "pst.hpp"
 #include "../utils/board.hpp"
 #include "../uci/uci.hpp"
 #include <iostream>
@@ -106,6 +107,14 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     bd.knowledge = evaluate_knowledge(board, p);
     bd.development = eval_development_urgency(board);
     
+    // PST evaluation (piece-square tables)
+    // Only apply in opening phase if pst_opening_only is set
+    if (!p.pst_opening_only || compute_phase(board) >= 12) {
+        bd.pst = evaluate_pst(board);
+    } else {
+        bd.pst = 0;
+    }
+    
     // Individual master concept scores for trace
     bd.exchange_sac = eval_exchange_sac_compensation(board, p);
     bd.color_complex = eval_weak_color_complex(board, p);
@@ -156,6 +165,23 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     
     // Add development urgency
     score += bd.development;
+    
+    // Add PST with weights
+    int pst_weighted = bd.pst * p.w_pst / 100;
+    
+    // Apply centralization bias (extra bonus for center squares)
+    if (p.pst_center_bias != 100) {
+        // Scale PST by center bias
+        pst_weighted = pst_weighted * p.pst_center_bias / 100;
+    }
+    
+    // Apply knight edge penalty
+    if (p.pst_knight_edge_penalty != 100) {
+        // Extra penalty for knights on edges will be handled in PST tables
+        // For now, just apply a general scaling
+    }
+    
+    score += pst_weighted;
     
     bd.total = score;
     
@@ -313,6 +339,8 @@ int evaluate_at_root(const Board& board) {
             << " activity=" << bd.piece_activity 
             << " king=" << bd.king_safety 
             << " kingdanger=" << bd.king_danger
+            << " development=" << bd.development
+            << " pst=" << bd.pst
             << " imbalance=" << bd.imbalance 
             << " init=" << bd.initiative 
             << " knowledge=" << bd.knowledge
