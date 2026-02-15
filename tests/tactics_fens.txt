@@ -1,0 +1,7 @@
+# Tactical test positions
+# Format: FEN|expected_move|description
+
+r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4|5g7f|Bh7# - mate in 1
+r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 2 3|Nf3g5|Bxg5 - fork f7,g5
+r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4|Qxf7#|Mate - sacrifice
+r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 4 4|f6g5|Qxf6 - discovered attack

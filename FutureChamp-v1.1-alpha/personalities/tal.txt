@@ -1,0 +1,7 @@
+# Tal - Aggressive attacking style
+Name = Tal
+RiskAppetite = 180
+SacrificeBias = 200
+SimplicityBias = 60
+HumanTemperature = 140
+HumanHardFloorCp = 80

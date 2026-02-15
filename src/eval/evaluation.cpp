@@ -13,6 +13,7 @@
 #include "params.hpp"
 #include "knowledge.hpp"
 #include "../utils/board.hpp"
+#include "../uci/uci.hpp"
 #include <iostream>
 #include <sstream>
 
@@ -54,6 +55,7 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     bd.pawn_structure = evaluate_pawn_structure(board);
     bd.piece_activity = evaluate_piece_activity(board);
     bd.king_safety = evaluate_king_safety(board);
+    bd.king_danger = evaluate_king_danger(board);
     bd.imbalance = evaluate_imbalance(board);
     bd.initiative = evaluate_initiative(board);
     bd.knowledge = evaluate_knowledge(board, p);
@@ -75,6 +77,8 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     score += static_cast<int>(bd.pawn_structure * p.w_pawn_structure / 100.0f);
     score += static_cast<int>(bd.imbalance * scale);  // ImbalanceScale applies here
     score += static_cast<int>(bd.king_safety * p.w_king_safety / 100.0f);
+    // King danger (enemy king danger is bad for them, good for us)
+    score += static_cast<int>(bd.king_danger * UCI::options.w_king_danger / 100.0f);
     // Initiative with dominance multiplier
     int initiative_score = bd.initiative;
     if (p.initiative_dominance != 100) {
@@ -259,6 +263,7 @@ int evaluate_at_root(const Board& board) {
             << " pawns=" << bd.pawn_structure 
             << " activity=" << bd.piece_activity 
             << " king=" << bd.king_safety 
+            << " kingdanger=" << bd.king_danger
             << " imbalance=" << bd.imbalance 
             << " init=" << bd.initiative 
             << " knowledge=" << bd.knowledge

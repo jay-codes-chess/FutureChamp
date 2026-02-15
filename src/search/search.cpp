@@ -532,9 +532,11 @@ Evaluation::EvalMode get_eval_mode(int depth, bool is_qsearch = false,
 // Evaluate position (using our Silman-based evaluation)
 int evaluate_position(const Board& board, int color) {
     // Check for draws first
-    if (is_fifty_move_draw(board)) return 0;
-    if (is_repetition_draw(board)) return 0;
-    if (is_insufficient_material(board)) return 0;
+    if (is_fifty_move_draw(board) || is_repetition_draw(board) || is_insufficient_material(board)) {
+        // Return contempt from the side to move's perspective
+        int contempt_score = UCI::options.contempt * 10;  // Convert to centipawns
+        return (board.side_to_move == WHITE) ? contempt_score : -contempt_score;
+    }
     
     int score = Evaluation::evaluate(board);
     return (color == WHITE) ? score : -score;
@@ -543,9 +545,11 @@ int evaluate_position(const Board& board, int color) {
 // **TIERED EVAL**: Evaluate with specified mode
 int evaluate_position(const Board& board, int color, Evaluation::EvalMode mode) {
     // Check for draws first
-    if (is_fifty_move_draw(board)) return 0;
-    if (is_repetition_draw(board)) return 0;
-    if (is_insufficient_material(board)) return 0;
+    if (is_fifty_move_draw(board) || is_repetition_draw(board) || is_insufficient_material(board)) {
+        // Return contempt from the side to move's perspective
+        int contempt_score = UCI::options.contempt * 10;  // Convert to centipawns
+        return (board.side_to_move == WHITE) ? contempt_score : -contempt_score;
+    }
     
     int score = Evaluation::evaluate(board, mode);
     return (color == WHITE) ? score : -score;

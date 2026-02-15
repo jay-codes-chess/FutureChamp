@@ -232,6 +232,20 @@ void cmd_uci() {
     std::cout << "option name CheckExtEnable type check default true" << std::endl;
     std::cout << "option name CheckExtDepthMin type spin default 3 min 1 max 6" << std::endl;
     
+    // Time management
+    std::cout << "option name MoveOverhead type spin default 30 min 0 max 200" << std::endl;
+    std::cout << "option name MinThinkMs type spin default 20 min 0 max 2000" << std::endl;
+    std::cout << "option name MaxThinkMs type spin default 0 min 0 max 60000" << std::endl;
+    std::cout << "option name TimeSafety type spin default 90 min 50 max 100" << std::endl;
+    
+    // Draw rules
+    std::cout << "option name Contempt type spin default 0 min -50 max 50" << std::endl;
+    
+    // King danger eval
+    std::cout << "option name W_KingDanger type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name KingDangerRingAttackBonus type spin default 100 min 0 max 200" << std::endl;
+    std::cout << "option name KingDangerShieldPenalty type spin default 100 min 0 max 200" << std::endl;
+    
     std::cout << "info string BUILD_FLAGS -O2 -DNDEBUG -std=c++17 -static" << std::endl;
     std::cout << "uciok" << std::endl;
     std::cout.flush();
@@ -372,6 +386,40 @@ void cmd_go(const std::vector<std::string>& tokens) {
             // **Absolute bounds for safety**
             if (movetime < 50) movetime = 50;       // Minimum 0.05 seconds
             if (movetime > 30000) movetime = 30000; // Maximum 30 seconds
+            
+            // UCI-based time computation
+            int movestogo = 40;
+            for (size_t i = 0; i < tokens.size(); i++) {
+                if (tokens[i] == "movestogo" && i + 1 < tokens.size()) {
+                    movestogo = std::stoi(tokens[i + 1]);
+                    break;
+                }
+            }
+            
+            // Apply UCI time management formula
+            int divisor = (movestogo > 0) ? movestogo : 20;
+            if (divisor < 20) divisor = 20;
+            
+            int uci_time = (my_time + my_inc * divisor) / divisor;
+            uci_time = uci_time * UCI::options.time_safety / 100;
+            uci_time -= UCI::options.move_overhead;
+            
+            if (uci_time < UCI::options.min_think_ms) uci_time = UCI::options.min_think_ms;
+            if (UCI::options.max_think_ms > 0 && uci_time > UCI::options.max_think_ms) {
+                uci_time = UCI::options.max_think_ms;
+            }
+            
+            // Use UCI time if available
+            if (uci_time > 0 && uci_time < movetime) {
+                movetime = uci_time;
+            }
+            
+            // Debug output
+            if (options.debug_eval_trace) {
+                std::cout << "info string TIME budgetMs=" << movetime 
+                          << " wtime=" << wtime << " winc=" << winc 
+                          << " movestogo=" << movestogo << std::endl;
+            }
             
         } else {
             movetime = 1000;  // Default 1 second if no time info (tournament-safe)
@@ -662,6 +710,22 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
         options.check_ext_enable = (value == "true");
     } else if (name == "CheckExtDepthMin") {
         options.check_ext_depth_min = std::stoi(value);
+    } else if (name == "MoveOverhead") {
+        options.move_overhead = std::stoi(value);
+    } else if (name == "MinThinkMs") {
+        options.min_think_ms = std::stoi(value);
+    } else if (name == "MaxThinkMs") {
+        options.max_think_ms = std::stoi(value);
+    } else if (name == "TimeSafety") {
+        options.time_safety = std::stoi(value);
+    } else if (name == "Contempt") {
+        options.contempt = std::stoi(value);
+    } else if (name == "W_KingDanger") {
+        options.w_king_danger = std::stoi(value);
+    } else if (name == "KingDangerRingAttackBonus") {
+        options.king_danger_ring_bonus = std::stoi(value);
+    } else if (name == "KingDangerShieldPenalty") {
+        options.king_danger_shield_penalty = std::stoi(value);
     } else if (name == "DebugTraceWithParams") {
         Evaluation::set_param("DebugTraceWithParams", value);
     } else if (name == "PersonalityAutoLoad") {

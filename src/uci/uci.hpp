@@ -50,6 +50,20 @@ struct Options {
     int see_prune_threshold = -100;
     bool check_ext_enable = true;
     int check_ext_depth_min = 3;
+    
+    // Time management
+    int move_overhead = 30;
+    int min_think_ms = 20;
+    int max_think_ms = 0;
+    int time_safety = 90;
+    
+    // Draw rules
+    int contempt = 0;
+    
+    // King danger eval
+    int w_king_danger = 100;
+    int king_danger_ring_bonus = 100;
+    int king_danger_shield_penalty = 100;
 };
 
 extern Options options;

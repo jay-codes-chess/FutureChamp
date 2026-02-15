@@ -48,6 +48,7 @@ struct ScoreBreakdown {
     int pawn_structure = 0;
     int piece_activity = 0;
     int king_safety = 0;
+    int king_danger = 0;  // Enemy king danger
     int imbalance = 0;
     int initiative = 0;
     int knowledge = 0;
