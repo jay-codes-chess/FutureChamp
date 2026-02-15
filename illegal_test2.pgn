@@ -1,0 +1,230 @@
+[Event "?"]
+[Site "?"]
+[Date "2026.02.15"]
+[Round "1"]
+[White "FC1"]
+[Black "FC2"]
+[Result "0-1"]
+[ECO "A00"]
+[GameDuration "00:00:02"]
+[GameEndTime "2026-02-15T09:06:08.305 SE Asia Standard Time"]
+[GameStartTime "2026-02-15T09:06:06.290 SE Asia Standard Time"]
+[Opening "Dunst (Sleipner, Heinrichsen) Opening"]
+[PlyCount "18"]
+[Termination "time forfeit"]
+[TimeControl "1"]
+
+1. Nc3 {0.00/5 0.13s} Nc6 {0.00/5 0.13s} 2. d4 {0.00/4 0.10s} e5 {0.00/4 0.10s}
+3. dxe5 {0.00/4 0.10s} Bb4 {0.00/4 0.10s} 4. Nf3 {0.00/4 0.10s}
+Bxc3+ {0.00/3 0.10s} 5. bxc3 {0.00/4 0.10s} Nge7 {0.00/3 0.10s}
+6. Bg5 {0.00/4 0.10s} O-O {0.00/3 0.10s} 7. e4 {0.00/3 0.10s} Qe8 {0.00/3 0.10s}
+8. Bb5 {0.00/3 0.10s} Rb8 {0.00/3 0.10s} 9. O-O {0.00/3 0.10s}
+Kh8 {0.00/4 0.10s, White loses on time} 0-1
+
+[Event "?"]
+[Site "?"]
+[Date "2026.02.15"]
+[Round "1"]
+[White "FC2"]
+[Black "FC1"]
+[Result "0-1"]
+[ECO "A00"]
+[GameDuration "00:00:02"]
+[GameEndTime "2026-02-15T09:06:08.358 SE Asia Standard Time"]
+[GameStartTime "2026-02-15T09:06:06.340 SE Asia Standard Time"]
+[Opening "Dunst (Sleipner, Heinrichsen) Opening"]
+[PlyCount "18"]
+[Termination "time forfeit"]
+[TimeControl "1"]
+
+1. Nc3 {0.00/6 0.13s} Nc6 {0.00/5 0.13s} 2. Nf3 {0.00/5 0.10s}
+Nf6 {0.00/5 0.10s} 3. d4 {0.00/5 0.10s} d5 {0.00/5 0.10s} 4. Bf4 {0.00/4 0.10s}
+Bf5 {0.00/4 0.10s} 5. Ne5 {0.00/4 0.10s} Nxe5 {0.00/4 0.10s}
+6. dxe5 {0.00/5 0.10s} Bxc2 {0.00/4 0.10s} 7. Qxc2 {0.00/5 0.10s}
+Ne4 {0.00/4 0.10s} 8. Nxe4 {0.00/5 0.10s} dxe4 {0.00/5 0.10s}
+9. Qxe4 {0.00/4 0.10s} c6 {0.00/4 0.10s, White loses on time} 0-1
+
+[Event "?"]
+[Site "?"]
+[Date "2026.02.15"]
+[Round "1"]
+[White "FC1"]
+[Black "FC2"]
+[Result "0-1"]
+[ECO "A05"]
+[GameDuration "00:00:02"]
+[GameEndTime "2026-02-15T09:06:10.324 SE Asia Standard Time"]
+[GameStartTime "2026-02-15T09:06:08.309 SE Asia Standard Time"]
+[Opening "Reti Opening"]
+[PlyCount "18"]
+[Termination "time forfeit"]
+[TimeControl "1"]
+
+1. Nf3 {0.00/5 0.13s} Nf6 {0.00/5 0.13s} 2. Nc3 {0.00/5 0.10s}
+Nc6 {0.00/5 0.10s} 3. e4 {0.00/4 0.10s} Ng4 {0.00/4 0.10s} 4. Bc4 {0.00/4 0.10s}
+e6 {0.00/4 0.10s} 5. d4 {0.00/3 0.10s} Bb4 {0.00/3 0.10s} 6. Bd2 {0.00/3 0.10s}
+Nxf2 {0.00/3 0.10s} 7. Kxf2 {0.00/3 0.10s} Bxc3 {0.00/3 0.10s}
+8. Bxc3 {0.00/3 0.10s} d5 {0.00/4 0.10s} 9. exd5 {0.00/4 0.10s}
+exd5 {0.00/4 0.10s, White loses on time} 0-1
+
+[Event "?"]
+[Site "?"]
+[Date "2026.02.15"]
+[Round "1"]
+[White "FC2"]
+[Black "FC1"]
+[Result "0-1"]
+[ECO "A00"]
+[GameDuration "00:00:02"]
+[GameEndTime "2026-02-15T09:06:10.374 SE Asia Standard Time"]
+[GameStartTime "2026-02-15T09:06:08.360 SE Asia Standard Time"]
+[Opening "Dunst (Sleipner, Heinrichsen) Opening"]
+[PlyCount "18"]
+[Termination "time forfeit"]
+[TimeControl "1"]
+
+1. Nc3 {0.00/7 0.13s} Nf6 {0.00/6 0.13s} 2. Nf3 {0.00/6 0.10s}
+Nc6 {0.00/5 0.10s} 3. d4 {0.00/5 0.10s} d5 {0.00/4 0.10s} 4. Bf4 {0.00/4 0.10s}
+Bf5 {0.00/4 0.10s} 5. e4 {0.00/4 0.10s} Bxe4 {0.00/4 0.10s}
+6. Nxe4 {0.00/4 0.10s} dxe4 {0.00/5 0.10s} 7. Bb5 {0.00/4 0.10s}
+exf3 {0.00/5 0.10s} 8. Bxc6+ {0.00/4 0.10s} bxc6 {0.00/4 0.10s}
+9. Qxf3 {0.00/4 0.10s} Qd5 {0.00/4 0.10s, White loses on time} 0-1
+
+[Event "?"]
+[Site "?"]
+[Date "2026.02.15"]
+[Round "1"]
+[White "FC1"]
+[Black "FC2"]
+[Result "0-1"]
+[ECO "A05"]
+[GameDuration "00:00:02"]
+[GameEndTime "2026-02-15T09:06:12.339 SE Asia Standard Time"]
+[GameStartTime "2026-02-15T09:06:10.326 SE Asia Standard Time"]
+[Opening "Reti Opening"]
+[PlyCount "18"]
+[Termination "time forfeit"]
+[TimeControl "1"]
+
+1. Nf3 {0.00/5 0.13s} Nf6 {0.00/5 0.13s} 2. Nc3 {0.00/5 0.10s}
+Nc6 {0.00/5 0.10s} 3. e4 {0.00/4 0.10s} Ng4 {0.00/4 0.10s} 4. Bc4 {0.00/4 0.10s}
+e6 {0.00/4 0.10s} 5. O-O {0.00/4 0.10s} Bb4 {0.00/3 0.10s} 6. Nb5 {0.00/3 0.10s}
+d5 {0.00/3 0.10s} 7. exd5 {0.00/4 0.10s} Nxf2 {0.00/3 0.10s}
+8. Rxf2 {0.00/3 0.10s} exd5 {0.00/4 0.10s} 9. Qe2+ {0.00/3 0.10s}
+Be6 {0.00/3 0.10s, White loses on time} 0-1
+
+[Event "?"]
+[Site "?"]
+[Date "2026.02.15"]
+[Round "1"]
+[White "FC2"]
+[Black "FC1"]
+[Result "0-1"]
+[ECO "A00"]
+[GameDuration "00:00:02"]
+[GameEndTime "2026-02-15T09:06:12.417 SE Asia Standard Time"]
+[GameStartTime "2026-02-15T09:06:10.376 SE Asia Standard Time"]
+[Opening "Dunst (Sleipner, Heinrichsen) Opening"]
+[PlyCount "18"]
+[Termination "time forfeit"]
+[TimeControl "1"]
+
+1. Nc3 {0.00/7 0.13s} Nf6 {0.00/7 0.13s} 2. Nf3 {0.00/6 0.10s}
+Nc6 {0.00/6 0.10s} 3. d4 {0.00/5 0.10s} d5 {0.00/5 0.10s} 4. Bf4 {0.00/4 0.10s}
+Bf5 {0.00/4 0.10s} 5. Be5 {0.00/4 0.10s} Nxe5 {0.00/4 0.10s}
+6. dxe5 {0.00/5 0.10s} Bxc2 {0.00/4 0.10s} 7. Qxc2 {0.00/5 0.10s}
+Ne4 {0.00/4 0.13s} 8. Nxe4 {0.00/4 0.10s} dxe4 {0.00/5 0.10s}
+9. Qxe4 {0.00/5 0.10s} c6 {0.00/4 0.10s, White loses on time} 0-1
+
+[Event "?"]
+[Site "?"]
+[Date "2026.02.15"]
+[Round "1"]
+[White "FC1"]
+[Black "FC2"]
+[Result "0-1"]
+[ECO "A04"]
+[GameDuration "00:00:02"]
+[GameEndTime "2026-02-15T09:06:14.405 SE Asia Standard Time"]
+[GameStartTime "2026-02-15T09:06:12.341 SE Asia Standard Time"]
+[Opening "Reti Opening"]
+[PlyCount "18"]
+[Termination "time forfeit"]
+[TimeControl "1"]
+
+1. Nf3 {0.00/5 0.13s} Nc6 {0.00/5 0.13s} 2. e4 {0.00/4 0.10s} Nf6 {0.00/4 0.10s}
+3. Nc3 {0.00/4 0.10s} e5 {0.00/4 0.10s} 4. Bc4 {0.00/4 0.10s} Qe7 {0.00/3 0.11s}
+5. Nd5 {0.00/3 0.10s} Nxd5 {0.00/3 0.10s} 6. Bxd5 {0.00/3 0.10s}
+Nb4 {0.00/4 0.10s} 7. Bc4 {0.00/4 0.10s} d6 {0.00/3 0.10s} 8. c3 {0.00/3 0.15s}
+Nc6 {0.00/3 0.10s} 9. Bd5 {0.00/3 0.10s} Bd7 {0.00/3 0.10s, White loses on time}
+0-1
+
+[Event "?"]
+[Site "?"]
+[Date "2026.02.15"]
+[Round "1"]
+[White "FC2"]
+[Black "FC1"]
+[Result "0-1"]
+[ECO "A05"]
+[GameDuration "00:00:02"]
+[GameEndTime "2026-02-15T09:06:14.443 SE Asia Standard Time"]
+[GameStartTime "2026-02-15T09:06:12.421 SE Asia Standard Time"]
+[Opening "Reti Opening"]
+[PlyCount "18"]
+[Termination "time forfeit"]
+[TimeControl "1"]
+
+1. Nf3 {0.00/7 0.13s} Nf6 {0.00/6 0.13s} 2. Nc3 {0.00/6 0.10s}
+Nc6 {0.00/5 0.10s} 3. e4 {0.00/5 0.10s} Ng4 {0.00/4 0.10s} 4. Bc4 {0.00/4 0.10s}
+Nce5 {0.00/4 0.10s} 5. Nxe5 {+1.02/4 0.10s} Nxe5 {0.00/5 0.10s}
+6. Bb5 {0.00/4 0.10s} c5 {0.00/4 0.10s} 7. Qh5 {0.00/4 0.10s} Qc7 {0.00/4 0.10s}
+8. Nd5 {0.00/3 0.11s} Qd6 {0.00/4 0.10s} 9. O-O {0.00/3 0.10s}
+e6 {0.00/3 0.10s, White loses on time} 0-1
+
+[Event "?"]
+[Site "?"]
+[Date "2026.02.15"]
+[Round "1"]
+[White "FC1"]
+[Black "FC2"]
+[Result "0-1"]
+[ECO "A00"]
+[GameDuration "00:00:02"]
+[GameEndTime "2026-02-15T09:06:16.426 SE Asia Standard Time"]
+[GameStartTime "2026-02-15T09:06:14.407 SE Asia Standard Time"]
+[Opening "Dunst (Sleipner, Heinrichsen) Opening"]
+[PlyCount "18"]
+[Termination "time forfeit"]
+[TimeControl "1"]
+
+1. Nc3 {0.00/6 0.13s} Nf6 {0.00/5 0.13s} 2. Nf3 {0.00/5 0.10s}
+Nc6 {0.00/5 0.10s} 3. d4 {0.00/5 0.10s} d5 {0.00/4 0.10s} 4. Bg5 {0.00/3 0.10s}
+Bg4 {0.00/3 0.10s} 5. Nh4 {+0.88/3 0.10s} Ne4 {0.00/3 0.10s}
+6. Nxe4 {0.00/4 0.10s} dxe4 {0.00/4 0.10s} 7. d5 {0.00/3 0.10s}
+Nb4 {0.00/4 0.10s} 8. h3 {0.00/3 0.10s} Qxd5 {0.00/3 0.10s}
+9. Qxd5 {0.00/4 0.10s} Nxd5 {0.00/3 0.10s, White loses on time} 0-1
+
+[Event "?"]
+[Site "?"]
+[Date "2026.02.15"]
+[Round "1"]
+[White "FC2"]
+[Black "FC1"]
+[Result "0-1"]
+[ECO "A05"]
+[GameDuration "00:00:02"]
+[GameEndTime "2026-02-15T09:06:16.470 SE Asia Standard Time"]
+[GameStartTime "2026-02-15T09:06:14.445 SE Asia Standard Time"]
+[Opening "Reti Opening"]
+[PlyCount "18"]
+[Termination "time forfeit"]
+[TimeControl "1"]
+
+1. Nf3 {0.00/7 0.13s} Nf6 {0.00/6 0.13s} 2. Nc3 {0.00/6 0.10s}
+Nc6 {0.00/6 0.10s} 3. e4 {0.00/5 0.10s} e5 {0.00/5 0.10s} 4. Bc4 {0.00/4 0.10s}
+Qe7 {0.00/4 0.10s} 5. O-O {0.00/4 0.10s} Rg8 {0.00/3 0.10s}
+6. Nd5 {0.00/4 0.10s} Qd6 {0.00/4 0.10s} 7. Nxf6+ {0.00/4 0.10s}
+Qxf6 {0.00/4 0.10s} 8. Bd5 {0.00/4 0.10s} Bc5 {0.00/4 0.10s}
+9. Bxc6 {0.00/4 0.10s} Qxc6 {0.00/4 0.10s, White loses on time} 0-1
+

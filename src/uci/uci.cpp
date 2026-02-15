@@ -209,6 +209,7 @@ void cmd_uci() {
     std::cout << "option name DebugHumanPick type check default false" << std::endl;
     std::cout << "option name DebugSearchTrace type check default false" << std::endl;
     
+    std::cout << "info string BUILD_FLAGS -O2 -DNDEBUG -std=c++17 -static" << std::endl;
     std::cout << "uciok" << std::endl;
     std::cout.flush();
     log_out("uciok");
