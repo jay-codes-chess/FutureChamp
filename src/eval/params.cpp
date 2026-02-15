@@ -63,6 +63,7 @@ bool load_personality_text(const std::string& filepath, bool verbose) {
     }
     
     int applied = 0, ignored = 0;
+    std::string personality_name;
     
     // Parse line-by-line: key = value
     std::string line;
@@ -86,7 +87,13 @@ bool load_personality_text(const std::string& filepath, bool verbose) {
         
         if (key.empty() || value.empty()) continue;
         
-        // Try to set param
+        // Special handling for Name field
+        if (key == "Name") {
+            personality_name = value;
+            continue;
+        }
+        
+        // Use the same set_param function as UCI to ensure consistent behavior
         if (set_param(key, value)) {
             applied++;
         } else {
@@ -97,12 +104,35 @@ bool load_personality_text(const std::string& filepath, bool verbose) {
         }
     }
     
+    // Set the personality name
+    if (!personality_name.empty()) {
+        global_params.current_personality = personality_name;
+    }
+    
     if (verbose) {
-        std::cout << "info string Loaded personality file=" << filepath 
+        std::string display_name = personality_name.empty() ? filepath : personality_name;
+        std::cout << "info string Loaded personality: " << display_name 
                   << " (" << applied << " options applied, " << ignored << " ignored)" << std::endl;
     }
     
     return true;
+}
+
+// Load personality from explicit file path
+bool load_personality_file(const std::string& filepath, bool verbose) {
+    // Check file extension
+    if (filepath.size() >= 5 && filepath.substr(filepath.size() - 5) == ".json") {
+        // JSON file - extract name from filepath
+        size_t slash_pos = filepath.find_last_of("/\\");
+        std::string name = (slash_pos != std::string::npos) ? filepath.substr(slash_pos + 1) : filepath;
+        if (name.size() >= 5) name = name.substr(0, name.size() - 5);  // remove .json
+        
+        // Use existing JSON loader
+        return load_personality(name, verbose);
+    }
+    
+    // Text file
+    return load_personality_text(filepath, verbose);
 }
 
 // Load personality from JSON or text file

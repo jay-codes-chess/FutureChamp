@@ -1,0 +1,4 @@
+uci
+setoption name Personality value petrosian
+eval
+quit

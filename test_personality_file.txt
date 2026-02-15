@@ -1,0 +1,4 @@
+uci
+setoption name PersonalityFile value personalities/tal.txt
+eval
+quit
