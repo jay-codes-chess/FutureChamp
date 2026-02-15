@@ -1009,6 +1009,7 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
         if (UCI::options.debug_search_trace) {
             g_diag.evalCalls++;
             g_diag.evalTimeNs += std::chrono::duration_cast<std::chrono::nanoseconds>(t_eval_end - t_eval_start).count();
+            g_diag.qevalFast++;
         }
         return result;
     }
@@ -1016,15 +1017,26 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
     // Check if in check - MUST generate evasions
     bool in_check = board.is_in_check(color);
     
-    // Stand-pat evaluation - use MED when in check
-    // **EVAL PROFILING** with tiered evaluation
+    // **QSEARCH OPTIMIZATION**: First evaluate with FAST (cheap)
     auto t_eval_start = std::chrono::steady_clock::now();
-    Evaluation::EvalMode qsearch_mode = get_eval_mode(0, true, in_check);
-    int stand_pat = evaluate_position(board, color, qsearch_mode);
+    int stand_pat = evaluate_position(board, color, Evaluation::EvalMode::FAST);
     auto t_eval_end = std::chrono::steady_clock::now();
     if (UCI::options.debug_search_trace) {
         g_diag.evalCalls++;
         g_diag.evalTimeNs += std::chrono::duration_cast<std::chrono::nanoseconds>(t_eval_end - t_eval_start).count();
+        g_diag.qevalFast++;
+    }
+    
+    // If in check, we need MED for proper evaluation
+    if (in_check) {
+        t_eval_start = std::chrono::steady_clock::now();
+        stand_pat = evaluate_position(board, color, Evaluation::EvalMode::MED);
+        t_eval_end = std::chrono::steady_clock::now();
+        if (UCI::options.debug_search_trace) {
+            g_diag.evalCalls++;
+            g_diag.evalTimeNs += std::chrono::duration_cast<std::chrono::nanoseconds>(t_eval_end - t_eval_start).count();
+            g_diag.qevalMed++;
+        }
     }
     
     if (!in_check) {
@@ -1121,12 +1133,49 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
             g_diag.qCapturesSearched++;
         }
         
+        // **QSEARCH SMART EVAL MODE**:
+        // Decide eval mode for this capture position
+        bool use_med = false;
+        
+        // MED if capturing valuable piece (rook or queen)
+        int captured = board.piece_at(Bitboards::move_to(move));
+        if (captured >= ROOK && captured <= QUEEN) {
+            use_med = true;
+        }
+        
+        // MED if capture to enemy king ring (tactical)
+        int enemy_king_sq = Bitboards::lsb(board.pieces[KING] & board.colors[1 - color]);
+        if (Bitboards::is_square_attacked(board, Bitboards::move_to(move), enemy_king_sq)) {
+            use_med = true;
+        }
+        
+        // MED if score is near alpha/beta (critical position)
+        if (!use_med && (abs(stand_pat - alpha) <= 80 || abs(stand_pat - beta) <= 80)) {
+            use_med = true;
+        }
+        
         // Phase 2B: Use delta-based undo instead of Board copy
         UndoDelta u;
         save_delta(board, u, move);
         
         make_move_inplace(board, move);
-        int score = -quiescence_search(board, -beta, -alpha, 1 - color);
+        
+        // Evaluate with appropriate mode
+        int score;
+        if (use_med) {
+            auto t_child_start = std::chrono::steady_clock::now();
+            score = -quiescence_search(board, -beta, -alpha, 1 - color);
+            auto t_child_end = std::chrono::steady_clock::now();
+            if (UCI::options.debug_search_trace) {
+                // Account for child's eval calls inside quiescence_search
+                g_diag.qevalMed++;
+            }
+        } else {
+            score = -quiescence_search(board, -beta, -alpha, 1 - color);
+            if (UCI::options.debug_search_trace) {
+                g_diag.qevalFast++;
+            }
+        }
         
         restore_delta(board, u);
         

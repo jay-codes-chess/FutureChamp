@@ -546,6 +546,10 @@ void cmd_go(const std::vector<std::string>& tokens) {
                   << " callsMed=" << med_calls
                   << " callsFull=" << full_calls << std::endl;
         
+        // EVAL_QMODE breakdown (qsearch-specific)
+        std::cout << "info string EVAL_QMODE fast=" << Search::g_diag.qevalFast
+                  << " med=" << Search::g_diag.qevalMed << std::endl;
+        
         std::cout.flush();
     }
 }

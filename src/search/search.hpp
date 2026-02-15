@@ -47,6 +47,10 @@ struct SearchDiagnostics {
     uint64_t evalCalls = 0;
     uint64_t evalTimeNs = 0;
     
+    // QSearch eval mode counters
+    uint64_t qevalFast = 0;
+    uint64_t qevalMed = 0;
+    
     // Copy attribution counters
     uint64_t copies_make_return = 0;
     uint64_t copies_board_clone = 0;
