@@ -130,6 +130,9 @@ void set_style(const std::string& style_name);
 // Get current style name
 std::string get_style_name();
 
+// Set personality directory for relative path resolution
+void set_personality_dir(const std::string& dir);
+
 // Debug trace control
 void set_debug_trace(bool enabled);
 bool get_debug_trace();

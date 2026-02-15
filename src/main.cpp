@@ -511,6 +511,47 @@ int main(int argc, char* argv[]) {
             std::cout << std::endl;
             Search::perft_divide(b, 2);
             return 0;
+        } else if (arg == "--selfcheck" || arg == "--diagnose") {
+            // Self-check mode: verify engine can run
+            std::cout << "FutureChamp Self-Check" << std::endl;
+            std::cout << "======================" << std::endl;
+            
+            // Print exe path
+            std::string exe_path = Evaluation::get_exe_path();
+            std::cout << "exe_path: " << (exe_path.empty() ? "(empty)" : exe_path) << std::endl;
+            
+            // Print resolved personalities dir
+            std::string exe_dir = exe_path;
+            size_t last_slash = exe_dir.find_last_of("/\\");
+            if (last_slash != std::string::npos) {
+                exe_dir = exe_dir.substr(0, last_slash);
+            }
+            std::string pers_dir = exe_dir + "/personalities";
+            std::cout << "personalities_dir: " << pers_dir << std::endl;
+            
+            // Check if personalities exist
+            std::ifstream test(pers_dir + "/default.txt");
+            bool has_pers = test.is_open();
+            test.close();
+            std::cout << "personalities_found: " << (has_pers ? "yes" : "no") << std::endl;
+            
+            // Try loading default personality
+            std::cout << "Loading default personality..." << std::endl;
+            Evaluation::initialize();
+            bool loaded = Evaluation::load_personality("default", true);
+            std::cout << "personality_loaded: " << (loaded ? "yes" : "no") << std::endl;
+            
+            // Run perft 3 to verify engine works
+            std::cout << "Running perft 3..." << std::endl;
+            Board b;
+            b.set_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+            Search::perft(b, 3);
+            // Note: perft prints results to stdout, so just confirm it ran
+            std::cout << "perft3_completed: yes" << std::endl;
+            
+            std::cout << "======================" << std::endl;
+            std::cout << "Self-check complete." << std::endl;
+            return 0;
         }
     }
     

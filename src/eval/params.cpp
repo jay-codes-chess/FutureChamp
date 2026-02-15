@@ -22,6 +22,17 @@ std::string get_exe_path() {
     return g_exe_path;
 }
 
+// Store custom personality directory
+static std::string g_personality_dir;
+
+void set_personality_dir(const std::string& dir) {
+    g_personality_dir = dir;
+}
+
+std::string get_personality_dir() {
+    return g_personality_dir;
+}
+
 // Global params instance
 static Params global_params;
 
@@ -31,8 +42,27 @@ Params& get_params() {
 
 // Get full path for a file (relative to exe or absolute)
 std::string get_file_path(const std::string& relative_path) {
+    // First try: if personality_dir is set, use it
+    if (!g_personality_dir.empty()) {
+        // If relative_path is already absolute, use it
+        if (!relative_path.empty() && (relative_path[0] == '/' || (relative_path.length() > 2 && relative_path[1] == ':'))) {
+            std::ifstream test(relative_path);
+            if (test.is_open()) {
+                test.close();
+                return relative_path;
+            }
+        }
+        // Try personality_dir + relative_path
+        std::string full_path = g_personality_dir + "/" + relative_path;
+        std::ifstream test(full_path);
+        if (test.is_open()) {
+            test.close();
+            return full_path;
+        }
+    }
+    
+    // Second try: exe directory
     if (!g_exe_path.empty()) {
-        // Try exe directory first
         std::string exe_dir = g_exe_path;
         size_t last_slash = exe_dir.find_last_of("/\\");
         if (last_slash != std::string::npos) {
@@ -44,7 +74,19 @@ std::string get_file_path(const std::string& relative_path) {
             test.close();
             return full_path;
         }
+        
+        // Also try with personality_dir relative to exe
+        if (!g_personality_dir.empty()) {
+            std::string pers_dir = exe_dir + "/" + g_personality_dir;
+            full_path = pers_dir + "/" + relative_path;
+            std::ifstream test2(full_path);
+            if (test2.is_open()) {
+                test2.close();
+                return full_path;
+            }
+        }
     }
+    
     // Fall back to current working directory
     return relative_path;
 }

@@ -151,6 +151,7 @@ void cmd_uci() {
     std::cout << "option name Personality type combo default default "
               << "var default var petrosian var tal var capablanca var club1800" << std::endl;
     std::cout << "option name PersonalityFile type string default \"\"" << std::endl;
+    std::cout << "option name PersonalityDir type string default \"personalities\"" << std::endl;
     std::cout << "option name PersonalityAutoLoad type check default true" << std::endl;
     std::cout << "option name SavePersonality type string default \"\"" << std::endl;
     
@@ -752,6 +753,18 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
             } else {
                 std::cout << "info string Failed to load personality file: " << value << std::endl;
             }
+        }
+    } else if (name == "PersonalityDir") {
+        // Set personalities directory for relative path resolution
+        if (!value.empty() && value != "\"\"") {
+            // Remove quotes if present
+            size_t start = value.find_first_not_of('"');
+            size_t end = value.find_last_not_of('"');
+            if (start != std::string::npos && end != std::string::npos) {
+                value = value.substr(start, end - start + 1);
+            }
+            Evaluation::set_personality_dir(value);
+            std::cout << "info string PersonalityDir set to: " << value << std::endl;
         }
     } else if (name == "SavePersonality") {
         if (!value.empty() && value != "\"\"") {
