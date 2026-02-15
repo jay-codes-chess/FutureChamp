@@ -212,7 +212,7 @@ void cmd_uci() {
     // **EVAL TIERING OPTIONS**
     std::cout << "option name EvalTiering type check default true" << std::endl;
     std::cout << "option name EvalFastDepthThreshold type spin default 3 min 0 max 10" << std::endl;
-    std::cout << "option name EvalQSearchMode type combo default MED var FAST var MED" << std::endl;
+    std::cout << "option name EvalQSearchMode type combo default FAST var FAST var MED" << std::endl;
     
     std::cout << "info string BUILD_FLAGS -O2 -DNDEBUG -std=c++17 -static" << std::endl;
     std::cout << "uciok" << std::endl;

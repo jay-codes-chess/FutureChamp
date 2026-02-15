@@ -207,6 +207,7 @@ VerbalExplanation explain(int score, const std::string& fen) {
 
 void initialize() { 
     set_style("classical"); 
+    init_pawn_hash(16384);
 }
 
 void set_style(const std::string& style_name) {

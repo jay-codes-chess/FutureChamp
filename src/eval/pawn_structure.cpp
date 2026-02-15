@@ -5,8 +5,46 @@
 #include "pawn_structure.hpp"
 #include "material.hpp"
 #include <cmath>
+#include <vector>
 
 namespace Evaluation {
+
+// **PAWN HASH CACHE**
+static const int PAWN_HASH_SIZE = 16384;  // 2^14 entries
+static std::vector<PawnHashEntry> pawn_hash;
+
+void init_pawn_hash(int size) {
+    pawn_hash.resize(size);
+    for (auto& e : pawn_hash) {
+        e.key = 0;
+        e.score = 0;
+        e.valid = false;
+    }
+}
+
+void clear_pawn_hash() {
+    for (auto& e : pawn_hash) {
+        e.valid = false;
+    }
+}
+
+int probe_pawn_hash(uint64_t key, int& score) {
+    if (pawn_hash.empty()) return 0;
+    int idx = key & (pawn_hash.size() - 1);
+    if (pawn_hash[idx].valid && pawn_hash[idx].key == key) {
+        score = pawn_hash[idx].score;
+        return 1;  // Hit
+    }
+    return 0;  // Miss
+}
+
+void store_pawn_hash(uint64_t key, int score) {
+    if (pawn_hash.empty()) return;
+    int idx = key & (pawn_hash.size() - 1);
+    pawn_hash[idx].key = key;
+    pawn_hash[idx].score = score;
+    pawn_hash[idx].valid = true;
+}
 
 int evaluate_pawns_for_color(const Board& board, int color);
 
@@ -14,6 +52,13 @@ int evaluate_pawns_for_color(const Board& board, int color);
 // Using forward declaration to avoid circular dependency
 
 int evaluate_pawn_structure(const Board& board) {
+    // **PAWN HASH**: Try to use cached result
+    uint64_t pawn_key = (board.pieces[PAWN] << 0) ^ (board.colors[WHITE] << 16) ^ (board.colors[BLACK] << 32);
+    int cached_score = 0;
+    if (probe_pawn_hash(pawn_key, cached_score)) {
+        return cached_score;
+    }
+    
     int score = 0;
     
     // Early game center pawn bonus
@@ -38,6 +83,9 @@ int evaluate_pawn_structure(const Board& board) {
     // Evaluate pawns for each color
     score += evaluate_pawns_for_color(board, WHITE);
     score -= evaluate_pawns_for_color(board, BLACK);
+    
+    // **PAWN HASH**: Store result
+    store_pawn_hash(pawn_key, score);
     
     return score;
 }

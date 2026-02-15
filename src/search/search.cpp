@@ -496,13 +496,26 @@ bool is_insufficient_material(const Board& board) {
 }
 
 // **TIERED EVAL HELPER**: Determine eval mode based on depth
-Evaluation::EvalMode get_eval_mode(int depth, bool is_qsearch = false) {
+// For qsearch: pass in_check, is_capture, see_value
+Evaluation::EvalMode get_eval_mode(int depth, bool is_qsearch = false, 
+                                    bool in_check = false, bool is_capture = false, int see_value = 0) {
     if (!UCI::options.eval_tiering) {
         return Evaluation::EvalMode::FULL;
     }
     
     if (is_qsearch) {
-        // QSearch: use FAST or MED based on UCI option
+        // QSearch smart rules:
+        // If in check: need MED (king safety + mobility)
+        if (in_check) {
+            return Evaluation::EvalMode::MED;
+        }
+        
+        // If capture involves potential piece trade or good SEE: use MED
+        if (is_capture && see_value >= 0) {
+            return Evaluation::EvalMode::MED;
+        }
+        
+        // Default: FAST
         if (UCI::options.eval_qsearch_mode == "FAST") {
             return Evaluation::EvalMode::FAST;
         }
@@ -987,11 +1000,11 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
     nodes_searched++;
     g_diag.qnodes++;
     
-    // Check for stop
+    // Check for stop - use FAST for terminal
     if (should_stop()) {
         // **EVAL PROFILING** with tiered evaluation
         auto t_eval_start = std::chrono::steady_clock::now();
-        int result = evaluate_position(board, color, get_eval_mode(0, true));
+        int result = evaluate_position(board, color, Evaluation::EvalMode::FAST);
         auto t_eval_end = std::chrono::steady_clock::now();
         if (UCI::options.debug_search_trace) {
             g_diag.evalCalls++;
@@ -1003,10 +1016,10 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
     // Check if in check - MUST generate evasions
     bool in_check = board.is_in_check(color);
     
-    // Stand-pat evaluation - only valid when NOT in check
+    // Stand-pat evaluation - use MED when in check
     // **EVAL PROFILING** with tiered evaluation
     auto t_eval_start = std::chrono::steady_clock::now();
-    Evaluation::EvalMode qsearch_mode = get_eval_mode(0, true);
+    Evaluation::EvalMode qsearch_mode = get_eval_mode(0, true, in_check);
     int stand_pat = evaluate_position(board, color, qsearch_mode);
     auto t_eval_end = std::chrono::steady_clock::now();
     if (UCI::options.debug_search_trace) {
