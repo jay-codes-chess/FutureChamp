@@ -54,8 +54,74 @@ int clamp_value(int value, int min_val, int max_val) {
     return std::max(min_val, std::min(max_val, value));
 }
 
-// Load personality from JSON file
+// Load personality from text file (Rodent-style format)
+bool load_personality_text(const std::string& filepath, bool verbose) {
+    std::ifstream file(filepath);
+    
+    if (!file.is_open()) {
+        return false;
+    }
+    
+    int applied = 0, ignored = 0;
+    
+    // Parse line-by-line: key = value
+    std::string line;
+    while (std::getline(file, line)) {
+        // Trim whitespace
+        size_t start = line.find_first_not_of(" \t");
+        if (start == std::string::npos) continue;  // Empty line
+        if (line[start] == '#' || line[start] == '/') continue;  // Comment
+        
+        // Find '='
+        size_t eq_pos = line.find('=');
+        if (eq_pos == std::string::npos) continue;
+        
+        std::string key = line.substr(start, eq_pos - start);
+        std::string value = line.substr(eq_pos + 1);
+        
+        // Trim whitespace from key and value
+        while (!key.empty() && (key.back() == ' ' || key.back() == '\t')) key.pop_back();
+        while (!value.empty() && (value.front() == ' ' || value.front() == '\t')) value.erase(value.begin());
+        while (!value.empty() && (value.back() == ' ' || value.back() == '\t')) value.pop_back();
+        
+        if (key.empty() || value.empty()) continue;
+        
+        // Try to set param
+        if (set_param(key, value)) {
+            applied++;
+        } else {
+            ignored++;
+            if (verbose) {
+                std::cout << "info string Warning: Unknown personality key: " << key << std::endl;
+            }
+        }
+    }
+    
+    if (verbose) {
+        std::cout << "info string Loaded personality file=" << filepath 
+                  << " (" << applied << " options applied, " << ignored << " ignored)" << std::endl;
+    }
+    
+    return true;
+}
+
+// Load personality from JSON or text file
 bool load_personality(const std::string& name, bool verbose) {
+    // First try: text file (.txt)
+    std::string txt_path = get_file_path("./personalities/" + name + ".txt");
+    if (load_personality_text(txt_path, verbose)) {
+        global_params.current_personality = name;
+        return true;
+    }
+    
+    // Try alternative path for text
+    txt_path = get_file_path("personalities/" + name + ".txt");
+    if (load_personality_text(txt_path, verbose)) {
+        global_params.current_personality = name;
+        return true;
+    }
+    
+    // Fallback: JSON file
     std::string filename = get_file_path("./personalities/" + name + ".json");
     std::ifstream file(filename);
     

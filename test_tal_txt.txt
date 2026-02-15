@@ -1,0 +1,5 @@
+uci
+setoption name Personality value tal
+setoption name DebugEvalTrace value true
+eval
+quit
