@@ -51,6 +51,13 @@ struct Options {
     bool check_ext_enable = true;
     int check_ext_depth_min = 3;
     
+    // IID (Internal Iterative Deepening)
+    bool iid_enable = true;
+    int iid_depth_min = 5;
+    
+    // PVS (Principal Variation Search)
+    bool pvs_enable = true;
+    
     // Time management
     int move_overhead = 30;
     int min_think_ms = 20;
