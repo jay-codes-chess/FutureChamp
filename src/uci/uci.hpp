@@ -29,6 +29,11 @@ struct Options {
     // Debug options
     bool debug_eval_trace = false;
     bool debug_search_trace = false;
+    
+    // **EVAL TIERING**
+    bool eval_tiering = true;
+    int eval_fast_depth_threshold = 3;
+    std::string eval_qsearch_mode = "MED";  // "FAST" or "MED"
 };
 
 extern Options options;

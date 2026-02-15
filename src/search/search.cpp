@@ -495,6 +495,27 @@ bool is_insufficient_material(const Board& board) {
     return false;
 }
 
+// **TIERED EVAL HELPER**: Determine eval mode based on depth
+Evaluation::EvalMode get_eval_mode(int depth, bool is_qsearch = false) {
+    if (!UCI::options.eval_tiering) {
+        return Evaluation::EvalMode::FULL;
+    }
+    
+    if (is_qsearch) {
+        // QSearch: use FAST or MED based on UCI option
+        if (UCI::options.eval_qsearch_mode == "FAST") {
+            return Evaluation::EvalMode::FAST;
+        }
+        return Evaluation::EvalMode::MED;
+    }
+    
+    // In main search: use depth threshold
+    if (depth >= UCI::options.eval_fast_depth_threshold) {
+        return Evaluation::EvalMode::MED;
+    }
+    return Evaluation::EvalMode::FAST;
+}
+
 // Evaluate position (using our Silman-based evaluation)
 int evaluate_position(const Board& board, int color) {
     // Check for draws first
@@ -503,6 +524,17 @@ int evaluate_position(const Board& board, int color) {
     if (is_insufficient_material(board)) return 0;
     
     int score = Evaluation::evaluate(board);
+    return (color == WHITE) ? score : -score;
+}
+
+// **TIERED EVAL**: Evaluate with specified mode
+int evaluate_position(const Board& board, int color, Evaluation::EvalMode mode) {
+    // Check for draws first
+    if (is_fifty_move_draw(board)) return 0;
+    if (is_repetition_draw(board)) return 0;
+    if (is_insufficient_material(board)) return 0;
+    
+    int score = Evaluation::evaluate(board, mode);
     return (color == WHITE) ? score : -score;
 }
 
@@ -957,9 +989,9 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
     
     // Check for stop
     if (should_stop()) {
-        // **EVAL PROFILING**
+        // **EVAL PROFILING** with tiered evaluation
         auto t_eval_start = std::chrono::steady_clock::now();
-        int result = evaluate_position(board, color);
+        int result = evaluate_position(board, color, get_eval_mode(0, true));
         auto t_eval_end = std::chrono::steady_clock::now();
         if (UCI::options.debug_search_trace) {
             g_diag.evalCalls++;
@@ -972,9 +1004,10 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
     bool in_check = board.is_in_check(color);
     
     // Stand-pat evaluation - only valid when NOT in check
-    // **EVAL PROFILING**
+    // **EVAL PROFILING** with tiered evaluation
     auto t_eval_start = std::chrono::steady_clock::now();
-    int stand_pat = evaluate_position(board, color);
+    Evaluation::EvalMode qsearch_mode = get_eval_mode(0, true);
+    int stand_pat = evaluate_position(board, color, qsearch_mode);
     auto t_eval_end = std::chrono::steady_clock::now();
     if (UCI::options.debug_search_trace) {
         g_diag.evalCalls++;

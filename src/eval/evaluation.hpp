@@ -17,11 +17,19 @@
 
 #include <string>
 #include <vector>
+#include <cstdint>
 
 // Forward declaration
 struct Board;
 
 namespace Evaluation {
+
+// Evaluation tier modes for speed optimization
+enum class EvalMode {
+    FAST,   // Material + PST + basic king safety + pawn count only
+    MED,    // FAST + pawn structure + piece activity
+    FULL    // MED + all knowledge concepts
+};
 
 // Forward declarations for layer functions
 int evaluate_material(const Board& board);
@@ -99,6 +107,12 @@ int evaluate(const std::string& fen = "");
 
 // Efficient version that takes a Board directly (for use in search)
 int evaluate(const Board& board);
+
+// **TIERED EVAL**: Evaluate with specified mode for speed control
+int evaluate(const Board& board, EvalMode mode);
+
+// Get evaluation mode counters (for diagnostics)
+void get_mode_counts(uint64_t& fast, uint64_t& med, uint64_t& full);
 
 // Evaluate with full breakdown (for debugging)
 ScoreBreakdown evaluate_with_breakdown(const Board& board);

@@ -209,6 +209,11 @@ void cmd_uci() {
     std::cout << "option name DebugHumanPick type check default false" << std::endl;
     std::cout << "option name DebugSearchTrace type check default false" << std::endl;
     
+    // **EVAL TIERING OPTIONS**
+    std::cout << "option name EvalTiering type check default true" << std::endl;
+    std::cout << "option name EvalFastDepthThreshold type spin default 3 min 0 max 10" << std::endl;
+    std::cout << "option name EvalQSearchMode type combo default MED var FAST var MED" << std::endl;
+    
     std::cout << "info string BUILD_FLAGS -O2 -DNDEBUG -std=c++17 -static" << std::endl;
     std::cout << "uciok" << std::endl;
     std::cout.flush();
@@ -534,6 +539,13 @@ void cmd_go(const std::vector<std::string>& tokens) {
                   << " totalMs=" << evalMs
                   << " avgUs=" << avgUs << std::endl;
         
+        // EVAL_MODE breakdown
+        uint64_t fast_calls = 0, med_calls = 0, full_calls = 0;
+        Evaluation::get_mode_counts(fast_calls, med_calls, full_calls);
+        std::cout << "info string EVAL_MODE callsFast=" << fast_calls
+                  << " callsMed=" << med_calls
+                  << " callsFull=" << full_calls << std::endl;
+        
         std::cout.flush();
     }
 }
@@ -590,6 +602,12 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
         Evaluation::set_debug_trace(options.debug_eval_trace);
     } else if (name == "DebugSearchTrace") {
         options.debug_search_trace = (value == "true");
+    } else if (name == "EvalTiering") {
+        options.eval_tiering = (value == "true");
+    } else if (name == "EvalFastDepthThreshold") {
+        options.eval_fast_depth_threshold = std::stoi(value);
+    } else if (name == "EvalQSearchMode") {
+        options.eval_qsearch_mode = value;
     } else if (name == "DebugTraceWithParams") {
         Evaluation::set_param("DebugTraceWithParams", value);
     } else if (name == "PersonalityAutoLoad") {

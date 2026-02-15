@@ -18,6 +18,11 @@
 
 namespace Evaluation {
 
+// Evaluation mode counters for diagnostics
+static uint64_t g_eval_mode_fast = 0;
+static uint64_t g_eval_mode_med = 0;
+static uint64_t g_eval_mode_full = 0;
+
 static StyleWeights current_weights;
 static std::string current_style = "classical";
 static bool debug_trace_enabled = false;
@@ -91,6 +96,69 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
 // Efficient version that takes a Board directly (for search)
 int evaluate(const Board& board) {
     return evaluate_with_breakdown(board).total;
+}
+
+// **TIERED EVAL**: Evaluate with specified mode for speed control
+int evaluate(const Board& board, EvalMode mode) {
+    // Count calls by mode
+    if (mode == EvalMode::FAST) g_eval_mode_fast++;
+    else if (mode == EvalMode::MED) g_eval_mode_med++;
+    else g_eval_mode_full++;
+    
+    const auto& p = get_params();
+    
+    // Always evaluate material (foundation)
+    int material = evaluate_material(board);
+    
+    if (mode == EvalMode::FAST) {
+        // FAST: Material + PST + basic king safety + simple pawn count
+        ScoreBreakdown bd;
+        bd.material = material;
+        bd.pawn_structure = evaluate_pawn_structure(board);  // Basic pawn eval
+        bd.king_safety = evaluate_king_safety(board);
+        
+        int score = 0;
+        score += bd.material;
+        score += static_cast<int>(bd.pawn_structure * p.w_pawn_structure / 100.0f);
+        score += static_cast<int>(bd.king_safety * p.w_king_safety / 100.0f);
+        
+        // Tempo
+        if (board.side_to_move == WHITE) score += 10;
+        else score -= 10;
+        
+        return score;
+    }
+    
+    if (mode == EvalMode::MED) {
+        // MED: FAST + pawn structure + piece activity
+        ScoreBreakdown bd;
+        bd.material = material;
+        bd.pawn_structure = evaluate_pawn_structure(board);
+        bd.king_safety = evaluate_king_safety(board);
+        bd.piece_activity = evaluate_piece_activity(board);
+        
+        int score = 0;
+        score += bd.material;
+        score += static_cast<int>(bd.pawn_structure * p.w_pawn_structure / 100.0f);
+        score += static_cast<int>(bd.king_safety * p.w_king_safety / 100.0f);
+        score += static_cast<int>(bd.piece_activity * p.w_piece_activity / 100.0f);
+        
+        // Tempo
+        if (board.side_to_move == WHITE) score += 10;
+        else score -= 10;
+        
+        return score;
+    }
+    
+    // FULL: MED + all components
+    return evaluate_with_breakdown(board).total;
+}
+
+// Get evaluation mode counters (for diagnostics)
+void get_mode_counts(uint64_t& fast, uint64_t& med, uint64_t& full) {
+    fast = g_eval_mode_fast;
+    med = g_eval_mode_med;
+    full = g_eval_mode_full;
 }
 
 // FEN string version (for UCI commands)
