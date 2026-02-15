@@ -79,6 +79,9 @@ struct Options {
     int qsearch_checks_plies = 2;
     int qsearch_check_see_threshold = -50;
     
+    // Debug trace options
+    bool debug_tactical_trace = false;
+    
     // Singular Extensions
     bool singular_ext_enable = true;
     int singular_ext_depth_min = 6;

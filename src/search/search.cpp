@@ -1175,6 +1175,7 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
     
     // Generate moves based on whether we're in check
     std::vector<int> moves;
+    int checks_searched = 0;
     
     if (in_check) {
         // Generate ALL legal moves (evasions)
@@ -1214,6 +1215,40 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
                     continue;  // Skip bad captures
                 }
                 moves.push_back(move);
+            }
+        }
+        
+        // **LASER-STYLE QSEARCH CHECKS**: Add checking moves when not in check
+        if (UCI::options.qsearch_checks_enable && checks_searched < 8) {
+            for (int move : all_moves) {
+                if (checks_searched >= 8) break;  // Hard limit
+                if (!is_legal(board, move)) continue;
+                
+                // Skip captures and promotions (already handled)
+                int to = Bitboards::move_to(move);
+                int captured = board.piece_at(to);
+                if (captured != NO_PIECE || Bitboards::is_promotion(move)) continue;
+                
+                // Make the move temporarily to check if it gives check
+                Board temp = make_move(board, move);
+                int enemy_color = 1 - color;
+                
+                // Check if opponent's king is attacked
+                if (temp.is_in_check(enemy_color)) {
+                    // Apply SEE threshold filter
+                    int see_score = see(board, move);
+                    if (see_score >= UCI::options.qsearch_check_see_threshold) {
+                        moves.push_back(move);
+                        checks_searched++;
+                        g_diag.qChecksSearched++;
+                        
+                        if (UCI::options.debug_tactical_trace) {
+                            std::cout << "info string QSEARCH check added: " << Bitboards::move_to_uci(move) << " SEE=" << see_score << std::endl;
+                        }
+                    } else {
+                        g_diag.qChecksSkipped++;
+                    }
+                }
             }
         }
     }
@@ -1447,6 +1482,56 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
     
     // Order moves
     order_moves(moves, board, tt_move, depth);
+    
+    // **SINGULAR EXTENSION**: Extend TT move if it's clearly superior
+    int singular_ext = 0;
+    if (UCI::options.singular_ext_enable && 
+        depth >= UCI::options.singular_ext_depth_min &&
+        tt_move != 0 && 
+        !in_check) {
+        
+        // Check if TT move is in our move list and is quiet (not capture/promotion)
+        bool tt_move_is_candidate = false;
+        for (int m : moves) {
+            if (m == tt_move) {
+                int to = Bitboards::move_to(m);
+                int captured = board.piece_at(to);
+                if (captured == NO_PIECE && !Bitboards::is_promotion(m)) {
+                    tt_move_is_candidate = true;
+                }
+                break;
+            }
+        }
+        
+        if (tt_move_is_candidate) {
+            // Do verification search at reduced depth
+            int reduction = UCI::options.singular_ext_verification_reduction;
+            
+            // Make the move and search at reduced depth
+            UndoDelta singular_u;
+            save_delta(board, singular_u, tt_move);
+            make_move_inplace(board, tt_move);
+            
+            int score_without = -alpha_beta(board, depth - reduction, -MATE_SCORE, MATE_SCORE, 1 - color, true);
+            
+            restore_delta(board, singular_u);
+            
+            // If TT move is significantly better than alternatives, extend it
+            int margin = UCI::options.singular_ext_margin_cp;
+            if (tt_score - score_without >= margin) {
+                singular_ext = 1;
+                
+                if (UCI::options.debug_tactical_trace) {
+                    std::cout << "info string SINGULAR extension applied depth=" << depth 
+                              << " move=" << Bitboards::move_to_uci(tt_move) 
+                              << " ttScore=" << tt_score << " altScore=" << score_without << std::endl;
+                }
+            }
+        }
+    }
+    
+    // Apply singular extension to base search depth
+    int base_depth = depth - 1 + singular_ext;
     
     // **Futility pruning**: at shallow depths, prune quiet moves that are far behind
     if (UCI::options.futility_enable && depth <= 2 && !in_check) {

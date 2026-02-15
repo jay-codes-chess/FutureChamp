@@ -254,6 +254,7 @@ void cmd_uci() {
     std::cout << "option name QSearchChecksEnable type check default true" << std::endl;
     std::cout << "option name QSearchChecksPlies type spin default 2 min 0 max 2" << std::endl;
     std::cout << "option name QSearchCheckSEEThreshold type spin default -50 min -200 max 0" << std::endl;
+    std::cout << "option name DebugTacticalTrace type check default false" << std::endl;
     
     // Singular Extensions
     std::cout << "option name SingExtEnable type check default true" << std::endl;
@@ -774,6 +775,8 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
         options.qsearch_checks_plies = std::stoi(value);
     } else if (name == "QSearchCheckSEEThreshold") {
         options.qsearch_check_see_threshold = std::stoi(value);
+    } else if (name == "DebugTacticalTrace") {
+        options.debug_tactical_trace = (value == "true");
     } else if (name == "SingExtEnable") {
         options.singular_ext_enable = (value == "true");
     } else if (name == "SingExtDepthMin") {
