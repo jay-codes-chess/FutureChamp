@@ -550,6 +550,10 @@ void cmd_go(const std::vector<std::string>& tokens) {
         std::cout << "info string EVAL_QMODE fast=" << Search::g_diag.qevalFast
                   << " med=" << Search::g_diag.qevalMed << std::endl;
         
+        // Move ordering stats
+        std::cout << "info string MOVE_ORDER killerHits=" << Search::g_diag.killerHits
+                  << " historyHits=" << Search::g_diag.historyHits << std::endl;
+        
         std::cout.flush();
     }
 }

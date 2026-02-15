@@ -876,8 +876,14 @@ int score_move_for_order(Board& board, int move, int tt_move, int depth) {
     
     // 3. Killer moves
     if (depth >= 0 && depth < 64) {
-        if (move == killer_moves[depth][0]) return 85000;
-        if (move == killer_moves[depth][1]) return 84000;
+        if (move == killer_moves[depth][0]) {
+            g_diag.killerHits++;
+            return 85000;
+        }
+        if (move == killer_moves[depth][1]) {
+            g_diag.killerHits++;
+            return 84000;
+        }
     }
     
     // 4. Castling
@@ -887,6 +893,9 @@ int score_move_for_order(Board& board, int move, int tt_move, int depth) {
     
     // 5. Simple history
     score = history_scores[from][to];
+    if (score > 0) {
+        g_diag.historyHits++;
+    }
     
     // 6. Bonus for moving toward center in opening
     if (board.fullmove_number <= 20) {

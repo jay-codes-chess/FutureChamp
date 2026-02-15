@@ -51,6 +51,10 @@ struct SearchDiagnostics {
     uint64_t qevalFast = 0;
     uint64_t qevalMed = 0;
     
+    // Move ordering stats
+    uint64_t killerHits = 0;
+    uint64_t historyHits = 0;
+    
     // Copy attribution counters
     uint64_t copies_make_return = 0;
     uint64_t copies_board_clone = 0;
@@ -81,6 +85,16 @@ struct SearchResult {
     double time_ms;
     std::vector<std::string> pv;
 };
+
+// **MOVE ORDERING TABLES**
+static const int MAX_PLY = 64;
+static const int MAX_SQ = 64;
+
+// Killer moves: [ply][2]
+extern int killers[MAX_PLY][2];
+
+// History heuristic: [side][from][to]
+extern int history[2][MAX_SQ][MAX_SQ];
 
 // Initialize search (creates transposition table)
 void initialize();
