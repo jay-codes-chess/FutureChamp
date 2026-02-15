@@ -49,6 +49,7 @@ struct ScoreBreakdown {
     int piece_activity = 0;
     int king_safety = 0;
     int king_danger = 0;  // Enemy king danger
+    int development = 0;   // Opening development urgency
     int imbalance = 0;
     int initiative = 0;
     int knowledge = 0;

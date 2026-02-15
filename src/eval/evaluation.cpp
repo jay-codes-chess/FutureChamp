@@ -24,6 +24,51 @@ static uint64_t g_eval_mode_fast = 0;
 static uint64_t g_eval_mode_med = 0;
 static uint64_t g_eval_mode_full = 0;
 
+// Opening development urgency - penalize time-wasting in opening
+int eval_development_urgency(const Board& b) {
+    // Only in opening phase (when most pieces are still on board)
+    uint64_t minors_majors =
+        b.pieces[WHITE] & ~(b.pieces[PAWN] | b.pieces[KING]) |
+        b.pieces[BLACK] & ~(b.pieces[PAWN] | b.pieces[KING]);
+    
+    int count = __builtin_popcountll(minors_majors);
+    if (count < 12) return 0;  // Not opening anymore
+    
+    int score = 0;
+    
+    // Tunable constants (cp)
+    const int UNDEV_MINOR_PENALTY = 15;
+    const int NOT_CASTLED_PENALTY = 25;
+    const int QUEEN_EARLY_PENALTY = 8;
+    
+    // Undeveloped minors: White
+    // Knights on b1/g1, bishops on c1/f1
+    if (b.piece_at(1) == KNIGHT && b.color_at(1) == WHITE) score -= UNDEV_MINOR_PENALTY;
+    if (b.piece_at(6) == KNIGHT && b.color_at(6) == WHITE) score -= UNDEV_MINOR_PENALTY;
+    if (b.piece_at(2) == BISHOP && b.color_at(2) == WHITE) score -= UNDEV_MINOR_PENALTY;
+    if (b.piece_at(5) == BISHOP && b.color_at(5) == WHITE) score -= UNDEV_MINOR_PENALTY;
+    
+    // Undeveloped minors: Black
+    if (b.piece_at(57) == KNIGHT && b.color_at(57) == BLACK) score += UNDEV_MINOR_PENALTY;
+    if (b.piece_at(62) == KNIGHT && b.color_at(62) == BLACK) score += UNDEV_MINOR_PENALTY;
+    if (b.piece_at(58) == BISHOP && b.color_at(58) == BLACK) score += UNDEV_MINOR_PENALTY;
+    if (b.piece_at(61) == BISHOP && b.color_at(61) == BLACK) score += UNDEV_MINOR_PENALTY;
+    
+    // Castling: penalize if not castled
+    // White king on e1, black on e8 - check if castled
+    bool white_castled = (b.piece_at(6) == KING && b.color_at(6) == WHITE) || (b.piece_at(2) == KING && b.color_at(2) == WHITE);
+    bool black_castled = (b.piece_at(62) == KING && b.color_at(62) == BLACK) || (b.piece_at(58) == KING && b.color_at(58) == BLACK);
+    
+    if (!white_castled) score -= NOT_CASTLED_PENALTY;
+    if (!black_castled) score += NOT_CASTLED_PENALTY;
+    
+    // Queen on home square
+    if (!(b.piece_at(4) == QUEEN && b.color_at(4) == WHITE)) score -= QUEEN_EARLY_PENALTY;
+    if (!(b.piece_at(60) == QUEEN && b.color_at(60) == BLACK)) score += QUEEN_EARLY_PENALTY;
+    
+    return score;
+}
+
 static StyleWeights current_weights;
 static std::string current_style = "classical";
 static bool debug_trace_enabled = false;
@@ -59,6 +104,7 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     bd.imbalance = evaluate_imbalance(board);
     bd.initiative = evaluate_initiative(board);
     bd.knowledge = evaluate_knowledge(board, p);
+    bd.development = eval_development_urgency(board);
     
     // Individual master concept scores for trace
     bd.exchange_sac = eval_exchange_sac_compensation(board, p);
@@ -107,6 +153,9 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
         int simplify_bonus = (trade_bias - 100) * simplify_factor / 100;
         score -= simplify_bonus;
     }
+    
+    // Add development urgency
+    score += bd.development;
     
     bd.total = score;
     
