@@ -227,6 +227,10 @@ void cmd_uci() {
     std::cout << "option name FutilityEnable type check default true" << std::endl;
     std::cout << "option name FutilityMargin1 type spin default 120 min 0 max 500" << std::endl;
     std::cout << "option name FutilityMargin2 type spin default 240 min 0 max 1000" << std::endl;
+    std::cout << "option name SEEPruneEnable type check default true" << std::endl;
+    std::cout << "option name SEEPruneThreshold type spin default -100 min -500 max 0" << std::endl;
+    std::cout << "option name CheckExtEnable type check default true" << std::endl;
+    std::cout << "option name CheckExtDepthMin type spin default 3 min 1 max 6" << std::endl;
     
     std::cout << "info string BUILD_FLAGS -O2 -DNDEBUG -std=c++17 -static" << std::endl;
     std::cout << "uciok" << std::endl;
@@ -650,6 +654,14 @@ void cmd_setoption(const std::vector<std::string>& tokens) {
         options.futility_margin1 = std::stoi(value);
     } else if (name == "FutilityMargin2") {
         options.futility_margin2 = std::stoi(value);
+    } else if (name == "SEEPruneEnable") {
+        options.see_prune_enable = (value == "true");
+    } else if (name == "SEEPruneThreshold") {
+        options.see_prune_threshold = std::stoi(value);
+    } else if (name == "CheckExtEnable") {
+        options.check_ext_enable = (value == "true");
+    } else if (name == "CheckExtDepthMin") {
+        options.check_ext_depth_min = std::stoi(value);
     } else if (name == "DebugTraceWithParams") {
         Evaluation::set_param("DebugTraceWithParams", value);
     } else if (name == "PersonalityAutoLoad") {

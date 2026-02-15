@@ -877,6 +877,16 @@ int score_move_for_order(Board& board, int move, int tt_move, int depth) {
         score = 90000;
         score += get_piece_value(captured) * 10;
         score -= get_piece_value(piece);
+        
+        // **SEE Pruning in main search**: down-rank losing captures at non-PV nodes
+        if (UCI::options.see_prune_enable) {
+            int see_score = see(board, move);
+            if (see_score < UCI::options.see_prune_threshold) {
+                // Big penalty for clearly losing captures
+                score += see_score * 10;  // Reduce score significantly
+            }
+        }
+        
         return score;
     }
     
@@ -1438,8 +1448,25 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
             }
         } else {
             // Normal search
+            // **Check Extension**: extend depth for checks at deeper plies
+            int search_depth = depth - 1;
+            if (UCI::options.check_ext_enable && depth >= UCI::options.check_ext_depth_min) {
+                // Check if this move gives check
+                make_move_inplace(board, move);
+                bool gives_check_ext = board.is_in_check(1 - color);
+                restore_delta(board, u);
+                
+                if (gives_check_ext) {
+                    search_depth += 1;  // Extend by 1
+                    if (UCI::options.debug_pruning_trace) {
+                        std::cout << "info string CHECK_EXT move=" << Bitboards::move_to_uci(move) 
+                                  << " depth=" << depth << "->" << search_depth + 1 << std::endl;
+                    }
+                }
+            }
+            
             make_move_inplace(board, move);
-            score = -alpha_beta(board, depth - 1, -beta, -alpha, 1 - color, true);
+            score = -alpha_beta(board, search_depth, -beta, -alpha, 1 - color, true);
             restore_delta(board, u);
         }
         

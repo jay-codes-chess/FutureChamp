@@ -46,6 +46,10 @@ struct Options {
     bool futility_enable = true;
     int futility_margin1 = 120;
     int futility_margin2 = 240;
+    bool see_prune_enable = true;
+    int see_prune_threshold = -100;
+    bool check_ext_enable = true;
+    int check_ext_depth_min = 3;
 };
 
 extern Options options;
