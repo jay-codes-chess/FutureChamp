@@ -21,11 +21,10 @@ jobs:
         run: choco install mingw -y
 
       - name: Compile FutureChamp
-        run: |
-          g++ -o FutureChamp.exe -O2 -std=c++17 -static-libgcc -static-libstdc++ -DNDEBUG -Isrc -Isrc/eval -Isrc/search -Isrc/uci -Isrc/utils ./src/*.cpp ./src/eval/*.cpp ./src/search/*.cpp ./src/uci/*.cpp ./src/utils/*.cpp
+        run: g++ -o FutureChamp.exe -O2 -std=c++17 -static-libgcc -static-libstdc++ -DNDEBUG -Isrc -Isrc/eval -Isrc/search -Isrc/uci -Isrc/utils ./src/*.cpp ./src/eval/*.cpp ./src/search/*.cpp ./src/uci/*.cpp ./src/utils/*.cpp
 
       - name: Verify executable
-        run: ls -la FutureChamp.exe
+        run: if (Test-Path FutureChamp.exe) { Get-Item FutureChamp.exe | Select-Object Name, Length }
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
