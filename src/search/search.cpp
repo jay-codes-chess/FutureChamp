@@ -902,13 +902,53 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
             score = -alpha_beta(new_board, depth - 1, -beta, -alpha, 1 - color, true);
             first_move_searched = true;
         } else {
-            // Subsequent moves: null window search (PVS)
-            score = -alpha_beta(new_board, depth - 1, -alpha - 1, -alpha, 1 - color, true);
+            // LMR: Late Move Reduction
+            // Conditions: depth >= 3, not in check, quiet move, not TT move, not killer
+            int move_index = static_cast<int>(i);  // 0-based index
+            int to = Bitboards::move_to(move);
+            bool is_capture = (board.piece_at(to) != NO_PIECE);
+            bool is_promo = Bitboards::is_promotion(move);
+            bool is_special = is_capture || is_promo || Bitboards::is_castle(move) || Bitboards::is_en_passant(move);
+            bool is_tt_move = (move == tt_move);
+            bool is_killer = (move == killer_moves[depth][0] || move == killer_moves[depth][1]);
             
-            // If null window search failed high, re-search with full window
-            // (score > alpha means it might be better, but we need full window to know)
-            if (score > alpha && score < beta) {
-                score = -alpha_beta(new_board, depth - 1, -beta, -alpha, 1 - color, true);
+            // Check if we should apply LMR
+            bool do_lmr = (depth >= 3 && 
+                          !in_check && 
+                           !is_special && 
+                           !is_tt_move && 
+                           !is_killer && 
+                           move_index >= 4);
+            
+            int reduction = 0;
+            if (do_lmr) {
+                // Base reduction: 1 ply for move_index >= 4
+                reduction = 1;
+                // Extra reduction: 2 ply only if depth >= 6 AND move_index >= 10
+                if (depth >= 6 && move_index >= 10) {
+                    reduction = 2;
+                }
+                
+                // Clamp reduction so we never go below depth 1
+                int reduced_depth = depth - 1 - reduction;
+                if (reduced_depth < 1) reduced_depth = 1;
+                
+                // LMR: do reduced-depth null-window search first
+                score = -alpha_beta(new_board, reduced_depth, -alpha - 1, -alpha, 1 - color, true);
+                
+                // If reduced search beat alpha, re-search at full depth
+                // (but only if we're not in the beta cutoff zone)
+                if (score > alpha && score < beta) {
+                    score = -alpha_beta(new_board, depth - 1, -beta, -alpha, 1 - color, true);
+                }
+            } else {
+                // No LMR: null window search (PVS)
+                score = -alpha_beta(new_board, depth - 1, -alpha - 1, -alpha, 1 - color, true);
+                
+                // If null window search failed high, re-search with full window
+                if (score > alpha && score < beta) {
+                    score = -alpha_beta(new_board, depth - 1, -beta, -alpha, 1 - color, true);
+                }
             }
         }
         
