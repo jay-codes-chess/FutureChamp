@@ -912,9 +912,13 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
             bool is_tt_move = (move == tt_move);
             bool is_killer = (move == killer_moves[depth][0] || move == killer_moves[depth][1]);
             
+            // Check if this move gives check - don't reduce checking moves
+            bool gives_check = new_board.is_in_check(1 - color);
+            
             // Check if we should apply LMR
             bool do_lmr = (depth >= 3 && 
                           !in_check && 
+                           !gives_check &&
                            !is_special && 
                            !is_tt_move && 
                            !is_killer && 
