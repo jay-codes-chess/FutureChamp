@@ -13,6 +13,7 @@
 #include "knowledge.hpp"
 #include "attack_eval.hpp"
 #include "attack_momentum.hpp"
+#include "attack_persistence.hpp"
 #include "sacrifice_eval.hpp"
 #include "params.hpp"
 #include "../utils/board.hpp"
@@ -83,6 +84,7 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
         bd.attack_momentum,
         bd.line_opening,
         bd.king_tropism);
+    bd.attack_persistence = evaluate_attack_persistence(board, bd.attack_momentum);
     
     // Apply params weights
     // Scale factor (100 = 1.0)
@@ -111,6 +113,7 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     score += bd.attack_momentum;
     score += bd.sacrifice_justification;
     score += bd.exchange_sac_tolerance;
+    score += bd.attack_persistence;
     
     // Tempo
     if (board.side_to_move == WHITE) score += 10;
@@ -220,6 +223,7 @@ int evaluate_at_root(const Board& board) {
             << " line_open=" << bd.line_opening
             << " agg_init=" << bd.aggressive_initiative
             << " attack_mom=" << bd.attack_momentum
+            << " attack_pers=" << bd.attack_persistence
             << " sacrifice=" << bd.sacrifice_justification
             << " exch_sac=" << bd.exchange_sac_tolerance
             << " total=" << bd.total;
