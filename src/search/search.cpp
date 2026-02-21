@@ -1299,6 +1299,52 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
                   << " pv " << pv_str
                   << std::endl;
         
+        // **Easy Move Detection**
+        // If best move is clearly better than second best, we can stop early
+        constexpr int EASY_MARGIN = 80;  // centipawns
+        constexpr int EASY_MIN_DEPTH = 5;
+        constexpr int EASY_MAX_RETRIES = 2;  // Allow some aspiration retries
+        
+        if (depth >= EASY_MIN_DEPTH && 
+            aspiration_retry <= EASY_MAX_RETRIES && 
+            std::abs(score) < MATE_THRESHOLD &&
+            !board.is_in_check(board.side_to_move)) {
+            
+            // Get best move from TT
+            int tt_idx = tt_index(board.hash);
+            int best_move = 0;
+            if (transposition_table[tt_idx].hash == board.hash) {
+                best_move = transposition_table[tt_idx].move;
+            }
+            
+            // Search top few moves with depth-2 to find second best
+            int second_best = -MATE_SCORE;
+            auto root_moves = generate_moves(board);
+            
+            // Search first few moves with full window
+            for (size_t i = 0; i < std::min(root_moves.size(), size_t(6)); i++) {
+                int m = root_moves[i];
+                if (!is_legal(board, m)) continue;
+                if (m == best_move && best_move != 0) continue;
+                
+                Board test_board = make_move(board, m);
+                // Depth-2 search with full window to get accurate score
+                int s = -alpha_beta(test_board, 2, -MATE_SCORE, MATE_SCORE, 1 - board.side_to_move, true);
+                if (s > second_best) {
+                    second_best = s;
+                }
+            }
+            
+            int margin = score - second_best;
+            
+            if (margin >= EASY_MARGIN && second_best > -MATE_SCORE/2) {
+                std::cout << "info string easy-move depth=" << depth 
+                          << " best=" << score << " second=" << second_best 
+                          << " margin=" << margin << std::endl;
+                break;  // Stop early
+            }
+        }
+        
         // **NEW: Don't stop too early in opening**
         // In opening (first 5 moves), search to at least depth 4
         if (depth < min_depth && board.fullmove_number <= 5) {
