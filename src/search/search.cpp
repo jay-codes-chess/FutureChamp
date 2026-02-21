@@ -867,6 +867,35 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
         return 0;  // Stalemate
     }
     
+    // **IID**: Internal Iterative Deepening
+    // If no good TT move, do a shallow search to get better ordering
+    // Conditions: depth >= 5, not in check, no valid tt_move
+    if (depth >= 5 && !in_check && (tt_move == 0 || !tt_hit)) {
+        // IID depth: depth - 2 for depth < 8, depth - 3 for depth >= 8
+        int iid_depth = (depth >= 8) ? depth - 3 : depth - 2;
+        if (iid_depth >= 2) {
+            // Run shallow search with full window
+            int iid_score = alpha_beta(board, iid_depth, -MATE_SCORE, MATE_SCORE, color, true);
+            
+            // Try to get best move from TT after IID search
+            int iid_tt_move = 0;
+            int iid_tt_score = 0;
+            if (tt_probe(board.hash, iid_depth, iid_tt_score, iid_tt_move)) {
+                // Validate the move
+                bool iid_move_legal = false;
+                for (int m : moves) {
+                    if (is_legal(board, m) && m == iid_tt_move) {
+                        iid_move_legal = true;
+                        break;
+                    }
+                }
+                if (iid_move_legal) {
+                    tt_move = iid_tt_move;  // Use IID move for ordering
+                }
+            }
+        }
+    }
+    
     // **IMPROVED**: Check extension - search deeper when in check
     if (in_check && depth < max_depth) {
         depth++;
