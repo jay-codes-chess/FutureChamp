@@ -817,10 +817,15 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
     
     // Check transposition table
     int tt_score, tt_move = 0;
+    int tt_flag = 0;
     bool tt_hit = tt_probe(board.hash, depth, tt_score, tt_move);
     
     // **FIXED**: Validate TT move against ALL legal moves, not just candidates
     if (tt_hit && tt_move != 0) {
+        // Also get the flag
+        int idx = tt_index(board.hash);
+        tt_flag = transposition_table[idx].flag;
+        
         bool tt_move_is_legal = false;
         auto all_legal_moves = generate_moves(board);
         for (int legal_move : all_legal_moves) {
@@ -833,6 +838,7 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
         if (!tt_move_is_legal) {
             tt_move = 0;
             tt_hit = false;  // Don't use score either
+            tt_flag = 0;
         }
     }
     
@@ -936,6 +942,38 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
     int best_score = -std::numeric_limits<int>::max();
     int flag = 1;  // alpha
     
+    // **Singular Extension**: Check if TT move is singular (much better than alternatives)
+    // Conditions: depth >= 6, TT hit, EXACT flag, not in check, not near mate
+    bool singular_extend = false;
+    if (depth >= 6 && tt_hit && tt_move != 0 && tt_flag == 3 && !in_check) {
+        // Check not near mate
+        if (std::abs(tt_score) < MATE_BOUND - 100) {
+            // Do reduced verification search excluding TT move
+            // Create a filtered move list without TT move
+            std::vector<int> non_tt_moves;
+            for (int m : moves) {
+                if (m != tt_move) non_tt_moves.push_back(m);
+            }
+            
+            if (!non_tt_moves.empty()) {
+                // Try each non-TT move with reduced depth to find best alternative
+                int best_without_tt = -MATE_SCORE;
+                for (int m : non_tt_moves) {
+                    Board test_board = make_move(board, m);
+                    int s = -alpha_beta(test_board, depth - 3, -tt_score - 50, -tt_score, 1 - color, true, m);
+                    if (s > best_without_tt) {
+                        best_without_tt = s;
+                    }
+                }
+                
+                // If TT move is > 80 centipawns better than best alternative, extend it
+                if (tt_score >= best_without_tt + 80) {
+                    singular_extend = true;
+                }
+            }
+        }
+    }
+    
     // PVS: Track if we've searched the first move
     bool first_move_searched = false;
     
@@ -954,9 +992,15 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
         
         // PVS: Principal Variation Search
         // First legal move gets full window, subsequent moves get null window
+        // Apply singular extension if applicable
         if (!first_move_searched) {
+            // Apply singular extension to TT move
+            int search_depth = depth;
+            if (singular_extend && move == tt_move) {
+                search_depth = depth + 1;  // Extend!
+            }
             // First move: full window search
-            score = -alpha_beta(new_board, depth - 1, -beta, -alpha, 1 - color, true, move);
+            score = -alpha_beta(new_board, search_depth - 1, -beta, -alpha, 1 - color, true, move);
             first_move_searched = true;
         } else {
             // LMR: Late Move Reduction
