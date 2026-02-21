@@ -30,6 +30,7 @@ static int max_depth = 20;
 static long nodes_searched = 0;
 static int best_move_found = 0;
 static int search_score = 0;
+static bool rk_hit_this_search = false;  // Reaction killer was used
 
 // Mate scores
 constexpr int MATE_SCORE = 30000;
@@ -97,6 +98,9 @@ static TTEntry* transposition_table;
 // Killer moves - moves that caused cutoffs at sibling nodes
 static int killer_moves[64][2];  // [depth][2 killer moves]
 
+// Reaction killers - strong replies to opponent's specific moves
+static int reaction_killers[64][64][2];  // [from][to][2 killer replies]
+
 // History heuristic - scores moves based on success
 static int history_scores[64][64];  // [from][to] history score
 
@@ -133,6 +137,9 @@ void initialize() {
         }
         for (int j = 0; j < 64; j++) {
             history_scores[i][j] = 0;
+            for (int k = 0; k < 2; k++) {
+                reaction_killers[i][j][k] = 0;
+            }
         }
     }
 }
@@ -636,13 +643,32 @@ if (board.fullmove_number <= 10) {
 
 // Order moves for better alpha-beta performance
 
-void order_moves(std::vector<int>& moves, Board& board, int tt_move, int depth) {
+void order_moves(std::vector<int>& moves, Board& board, int tt_move, int depth, int prev_move = 0) {
     if (moves.empty()) return;
+    
+    // Get reaction killer moves if we have a previous move
+    int rk0 = 0, rk1 = 0;
+    if (prev_move != 0) {
+        int prev_from = Bitboards::move_from(prev_move);
+        int prev_to = Bitboards::move_to(prev_move);
+        rk0 = reaction_killers[prev_from][prev_to][0];
+        rk1 = reaction_killers[prev_from][prev_to][1];
+    }
     
     // Score all moves
     std::vector<std::pair<int, int>> scored_moves;  // (score, move)
     for (int move : moves) {
         int score = score_move_for_order(board, move, tt_move, depth);
+        
+        // Boost reaction killers (after TT move, before killers/history)
+        if (move == rk0) {
+            score += 86000;  // Between TT (90000) and killer (85000)
+            rk_hit_this_search = true;
+        } else if (move == rk1) {
+            score += 83000;
+            rk_hit_this_search = true;
+        }
+        
         scored_moves.push_back({score, move});
     }
     
@@ -766,7 +792,7 @@ int quiescence_search(Board& board, int alpha, int beta, int color) {
 }
 
 // **ENHANCED**: Alpha-beta search with null move pruning and better mate detection
-int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool allow_null = true) {
+int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool allow_null = true, int prev_move = 0) {
     nodes_searched++;
     
     // Check for time
@@ -846,7 +872,7 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
             
             // Search with reduced depth
             int R = 2;  // Reduction factor
-            int null_score = -alpha_beta(null_board, depth - 1 - R, -beta, -beta + 1, 1 - color, false);
+            int null_score = -alpha_beta(null_board, depth - 1 - R, -beta, -beta + 1, 1 - color, false, 0);
             
             if (null_score >= beta) {
                 // Null move caused a beta cutoff
@@ -875,7 +901,7 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
         int iid_depth = (depth >= 8) ? depth - 3 : depth - 2;
         if (iid_depth >= 2) {
             // Run shallow search with full window
-            int iid_score = alpha_beta(board, iid_depth, -MATE_SCORE, MATE_SCORE, color, true);
+            int iid_score = alpha_beta(board, iid_depth, -MATE_SCORE, MATE_SCORE, color, true, prev_move);
             
             // Try to get best move from TT after IID search
             int iid_tt_move = 0;
@@ -902,7 +928,7 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
     }
     
     // Order moves
-    order_moves(moves, board, tt_move, depth);
+    order_moves(moves, board, tt_move, depth, prev_move);
 
     int best_move = moves[0];
     int best_score = -std::numeric_limits<int>::max();
@@ -928,7 +954,7 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
         // First legal move gets full window, subsequent moves get null window
         if (!first_move_searched) {
             // First move: full window search
-            score = -alpha_beta(new_board, depth - 1, -beta, -alpha, 1 - color, true);
+            score = -alpha_beta(new_board, depth - 1, -beta, -alpha, 1 - color, true, move);
             first_move_searched = true;
         } else {
             // LMR: Late Move Reduction
@@ -967,20 +993,20 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
                 if (reduced_depth < 1) reduced_depth = 1;
                 
                 // LMR: do reduced-depth null-window search first
-                score = -alpha_beta(new_board, reduced_depth, -alpha - 1, -alpha, 1 - color, true);
+                score = -alpha_beta(new_board, reduced_depth, -alpha - 1, -alpha, 1 - color, true, move);
                 
                 // If reduced search beat alpha, re-search at full depth
                 // (but only if we're not in the beta cutoff zone)
                 if (score > alpha && score < beta) {
-                    score = -alpha_beta(new_board, depth - 1, -beta, -alpha, 1 - color, true);
+                    score = -alpha_beta(new_board, depth - 1, -beta, -alpha, 1 - color, true, move);
                 }
             } else {
                 // No LMR: null window search (PVS)
-                score = -alpha_beta(new_board, depth - 1, -alpha - 1, -alpha, 1 - color, true);
+                score = -alpha_beta(new_board, depth - 1, -alpha - 1, -alpha, 1 - color, true, move);
                 
                 // If null window search failed high, re-search with full window
                 if (score > alpha && score < beta) {
-                    score = -alpha_beta(new_board, depth - 1, -beta, -alpha, 1 - color, true);
+                    score = -alpha_beta(new_board, depth - 1, -beta, -alpha, 1 - color, true, move);
                 }
             }
         }
@@ -1007,6 +1033,16 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
                             killer_moves[depth][1] = killer_moves[depth][0];
                             killer_moves[depth][0] = move;
                         }
+                    }
+                    
+                    // **NEW**: Update reaction killers (strong reply to opponent's move)
+                    // Only at depth >= 2 and if there was a previous move
+                    if (depth >= 2 && prev_move != 0) {
+                        int prev_from = Bitboards::move_from(prev_move);
+                        int prev_to = Bitboards::move_to(prev_move);
+                        // Shift old entry and add new one
+                        reaction_killers[prev_from][prev_to][1] = reaction_killers[prev_from][prev_to][0];
+                        reaction_killers[prev_from][prev_to][0] = move;
                     }
                     
                     // Update history
@@ -1122,6 +1158,7 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
     
     // Clear position history for new search
     position_history.clear();
+    rk_hit_this_search = false;  // Reset RK flag
     
     // Set time
     max_time_ms = max_time_ms_param;
@@ -1159,7 +1196,7 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
         // Aspiration search loop
         while (true) {
             // Search at this depth
-            score = alpha_beta(board, depth, alpha, beta, board.side_to_move, true);
+            score = alpha_beta(board, depth, alpha, beta, board.side_to_move, true, 0);
             
             // Check for fail-low (score <= alpha)
             if (score <= alpha && beta < MATE_SCORE) {
@@ -1257,6 +1294,9 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
     if (!legal) {
         result.best_move = 0;  // Discard illegal TT move
     }
+    
+    // **DEBUG**: Check if best move is a reaction killer (at root, prev_move = 0 so check all)
+    // This is optional debug info
 }
 		
 		
@@ -1277,6 +1317,12 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
         // Fallback to just best move if PV extraction failed
         if (pv_str.empty() && result.best_move != 0) {
             pv_str = Bitboards::move_to_uci(result.best_move);
+        }
+        
+        // **DEBUG**: Output if reaction killer was used
+        if (rk_hit_this_search) {
+            std::cout << "info string RK hit" << std::endl;
+            rk_hit_this_search = false;  // Reset for next depth
         }
         
         // Format mate scores properly
@@ -1329,7 +1375,7 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
                 
                 Board test_board = make_move(board, m);
                 // Depth-2 search with full window to get accurate score
-                int s = -alpha_beta(test_board, 2, -MATE_SCORE, MATE_SCORE, 1 - board.side_to_move, true);
+                int s = -alpha_beta(test_board, 2, -MATE_SCORE, MATE_SCORE, 1 - board.side_to_move, true, 0);
                 if (s > second_best) {
                     second_best = s;
                 }
