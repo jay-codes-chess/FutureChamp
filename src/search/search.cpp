@@ -874,13 +874,18 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
     
     // Order moves
     order_moves(moves, board, tt_move, depth);
-    
+
     int best_move = moves[0];
     int best_score = -std::numeric_limits<int>::max();
     int flag = 1;  // alpha
     
+    // PVS: Track if we've searched the first move
+    bool first_move_searched = false;
+    
     // Search all moves
-    for (int move : moves) {
+    for (size_t i = 0; i < moves.size(); i++) {
+        int move = moves[i];
+        
         if (should_stop()) return 0;
         
         Board new_board = make_move(board, move);
@@ -888,7 +893,24 @@ int alpha_beta(Board& board, int depth, int alpha, int beta, int color, bool all
         // Add current position to history for repetition detection
         position_history.push_back(board.hash);
         
-        int score = -alpha_beta(new_board, depth - 1, -beta, -alpha, 1 - color, true);
+        int score;
+        
+        // PVS: Principal Variation Search
+        // First legal move gets full window, subsequent moves get null window
+        if (!first_move_searched) {
+            // First move: full window search
+            score = -alpha_beta(new_board, depth - 1, -beta, -alpha, 1 - color, true);
+            first_move_searched = true;
+        } else {
+            // Subsequent moves: null window search (PVS)
+            score = -alpha_beta(new_board, depth - 1, -alpha - 1, -alpha, 1 - color, true);
+            
+            // If null window search failed high, re-search with full window
+            // (score > alpha means it might be better, but we need full window to know)
+            if (score > alpha && score < beta) {
+                score = -alpha_beta(new_board, depth - 1, -beta, -alpha, 1 - color, true);
+            }
+        }
         
         // Remove from history
         position_history.pop_back();
