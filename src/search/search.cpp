@@ -661,10 +661,11 @@ void order_moves(std::vector<int>& moves, Board& board, int tt_move, int depth, 
         int score = score_move_for_order(board, move, tt_move, depth);
         
         // Boost reaction killers (after TT move, before killers/history)
-        if (move == rk0) {
+        // Only if the move is legal in current position
+        if (move == rk0 && is_legal(board, move)) {
             score += 86000;  // Between TT (90000) and killer (85000)
             rk_hit_this_search = true;
-        } else if (move == rk1) {
+        } else if (move == rk1 && is_legal(board, move)) {
             score += 83000;
             rk_hit_this_search = true;
         }
@@ -1320,9 +1321,13 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
         }
         
         // **DEBUG**: Output if reaction killer was used
-        if (rk_hit_this_search) {
-            std::cout << "info string RK hit" << std::endl;
+        if (rk_hit_this_search && result.best_move != 0) {
+            std::string reply = Bitboards::move_to_uci(result.best_move);
+            std::cout << "info string RK hit reply=" << reply << std::endl;
             rk_hit_this_search = false;  // Reset for next depth
+        } else if (rk_hit_this_search) {
+            std::cout << "info string RK hit" << std::endl;
+            rk_hit_this_search = false;
         }
         
         // Format mate scores properly
