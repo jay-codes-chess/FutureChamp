@@ -17,33 +17,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up MinGW-w64
-        uses: egor-tensin/setup-mingw@v2
-        with:
-          platform: x64
+      - name: Install MinGW-w64
+        run: |
+          choco install mingw -y
+          refreshenv
 
       - name: Compile FutureChamp
+        shell: cmd
         run: |
           g++ -o FutureChamp.exe ^
-            ./src/*.cpp ^
-            ./src/eval/*.cpp ^
-            ./src/search/*.cpp ^
-            ./src/uci/*.cpp ^
-            ./src/utils/*.cpp ^
-            -Isrc -Isrc/eval -Isrc/search -Isrc/uci -Isrc/utils ^
+            .\src\*.cpp ^
+            .\src\eval\*.cpp ^
+            .\src\search\*.cpp ^
+            .\src\uci\*.cpp ^
+            .\src\utils\*.cpp ^
+            -Isrc -Isrc\eval -Isrc\search -Isrc\uci -Isrc\utils ^
             -O2 -std=c++17 ^
             -static-libgcc -static-libstdc++ ^
             -DNDEBUG
 
       - name: Verify executable
         run: |
-          if (Test-Path FutureChamp.exe) {
-            $size = (Get-Item FutureChamp.exe).Length
-            Write-Host "FutureChamp.exe created: $size bytes"
-          } else {
-            Write-Host "ERROR: FutureChamp.exe not found"
-            exit 1
-          }
+          if exist FutureChamp.exe (
+            for %%A in (FutureChamp.exe) do echo FutureChamp.exe created: %%~zA bytes
+          ) else (
+            echo ERROR: FutureChamp.exe not found
+            exit /b 1
+          )
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
