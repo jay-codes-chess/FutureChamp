@@ -1037,14 +1037,77 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
     // **IMPROVED: Ensure we search at least to depth 3**
     int min_depth = 3;
     
+    // Aspiration window variables
+    int prev_score = 0;
+    constexpr int ASPIRATION_WINDOW_START = 25;
+    constexpr int ASPIRATION_WINDOW_MAX = 1000;
+    constexpr int MATE_THRESHOLD = MATE_BOUND - 1000;  // Skip aspiration near mate
+    
     // Iterative deepening: search depth 1, 2, 3... up to max_search_depth
     for (int depth = 1; depth <= max_search_depth; depth++) {
         if (should_stop()) break;
         
         search_depth = depth;
         
-        // Search at this depth
-        int score = alpha_beta(board, depth, -MATE_SCORE, MATE_SCORE, board.side_to_move, true);
+        int score = 0;
+        int alpha = -MATE_SCORE;
+        int beta = MATE_SCORE;
+        int window = ASPIRATION_WINDOW_START;
+        int aspiration_retry = 0;
+        
+        // Use aspiration windows for depth >= 2, unless near mate
+        if (depth >= 2 && std::abs(prev_score) < MATE_THRESHOLD) {
+            alpha = prev_score - window;
+            beta = prev_score + window;
+        }
+        
+        // Aspiration search loop
+        while (true) {
+            // Search at this depth
+            score = alpha_beta(board, depth, alpha, beta, board.side_to_move, true);
+            
+            // Check for fail-low (score <= alpha)
+            if (score <= alpha && beta < MATE_SCORE) {
+                aspiration_retry++;
+                window = std::min(window * 2, ASPIRATION_WINDOW_MAX);
+                alpha = prev_score - window;
+                // beta stays at prev_score + window (or original beta if first fail-low)
+                if (aspiration_retry == 1) {
+                    beta = (prev_score + ASPIRATION_WINDOW_START < MATE_SCORE) ? prev_score + ASPIRATION_WINDOW_START : MATE_SCORE;
+                } else {
+                    beta = prev_score + window;
+                }
+                
+                // Debug output for aspiration retry
+                #ifdef DEBUG_ASPIRATION
+                std::cerr << "info string aspiration fail-low depth=" << depth << " window=" << window << " retry=" << aspiration_retry << std::endl;
+                #endif
+                
+                // Limit retries to prevent infinite loops
+                if (aspiration_retry >= 4 || window >= ASPIRATION_WINDOW_MAX) break;
+                continue;  // Re-search with wider window
+            }
+            // Check for fail-high (score >= beta)
+            else if (score >= beta && alpha > -MATE_SCORE) {
+                aspiration_retry++;
+                window = std::min(window * 2, ASPIRATION_WINDOW_MAX);
+                beta = prev_score + window;
+                // alpha stays at prev_score - window
+                
+                #ifdef DEBUG_ASPIRATION
+                std::cerr << "info string aspiration fail-high depth=" << depth << " window=" << window << " retry=" << aspiration_retry << std::endl;
+                #endif
+                
+                if (aspiration_retry >= 4 || window >= ASPIRATION_WINDOW_MAX) break;
+                continue;  // Re-search with wider window
+            }
+            
+            // Score is within window - success!
+            break;
+        }
+        
+        // Store score for next iteration's aspiration
+        prev_score = score;
         
         result.score = score;
         result.depth = depth;

@@ -10,8 +10,9 @@
 #include "king_safety.hpp"
 #include "imbalance.hpp"
 #include "initiative.hpp"
-#include "params.hpp"
 #include "knowledge.hpp"
+#include "attack_eval.hpp"
+#include "params.hpp"
 #include "../utils/board.hpp"
 #include <iostream>
 #include <sstream>
@@ -60,6 +61,12 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     bd.initiative_persist_raw = eval_initiative_persistence(board, p);  // Raw before scaling
     bd.initiative_persist = bd.initiative_persist_raw * p.concept_initiative_persist_weight / 100;  // Scaled
     
+    // Aggressive attack evaluation
+    bd.king_tropism = evaluate_king_tropism(board);
+    bd.pawn_storm = evaluate_pawn_storm(board);
+    bd.line_opening = evaluate_line_opening(board);
+    bd.aggressive_initiative = evaluate_aggressive_initiative(board);
+    
     // Apply params weights
     // Scale factor (100 = 1.0)
     float scale = p.w_imbalance / 100.0f;
@@ -78,6 +85,12 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     score += static_cast<int>(initiative_score * p.w_initiative / 100.0f);
     score += bd.initiative_persist;  // Add scaled initiative persist concept
     score += bd.knowledge;  // Already weighted internally
+    
+    // Aggressive attack evaluation (already bounded and phase-tapered)
+    score += bd.king_tropism;
+    score += bd.pawn_storm;
+    score += bd.line_opening;
+    score += bd.aggressive_initiative;
     
     // Tempo
     if (board.side_to_move == WHITE) score += 10;
@@ -182,6 +195,10 @@ int evaluate_at_root(const Board& board) {
             << " pawn_lever=" << bd.pawn_lever
             << " init_persist=" << bd.initiative_persist
             << " init_persist_raw=" << bd.initiative_persist_raw
+            << " tropism=" << bd.king_tropism
+            << " pawn_storm=" << bd.pawn_storm
+            << " line_open=" << bd.line_opening
+            << " agg_init=" << bd.aggressive_initiative
             << " total=" << bd.total;
         
         // Optionally include params in trace

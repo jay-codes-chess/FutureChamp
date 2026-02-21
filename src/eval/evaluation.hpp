@@ -49,6 +49,11 @@ struct ScoreBreakdown {
     int pawn_lever = 0;
     int initiative_persist = 0;
     int initiative_persist_raw = 0;  // Before personality scaling
+    // Aggressive attack evaluation
+    int king_tropism = 0;
+    int pawn_storm = 0;
+    int line_opening = 0;
+    int aggressive_initiative = 0;
     int total = 0;
 };
 
