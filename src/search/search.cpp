@@ -1070,13 +1070,9 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
             if (score <= alpha && beta < MATE_SCORE) {
                 aspiration_retry++;
                 window = std::min(window * 2, ASPIRATION_WINDOW_MAX);
+                // Recenter window symmetrically
                 alpha = prev_score - window;
-                // beta stays at prev_score + window (or original beta if first fail-low)
-                if (aspiration_retry == 1) {
-                    beta = (prev_score + ASPIRATION_WINDOW_START < MATE_SCORE) ? prev_score + ASPIRATION_WINDOW_START : MATE_SCORE;
-                } else {
-                    beta = prev_score + window;
-                }
+                beta = prev_score + window;
                 
                 // Debug output for aspiration retry
                 #ifdef DEBUG_ASPIRATION
@@ -1091,8 +1087,9 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
             else if (score >= beta && alpha > -MATE_SCORE) {
                 aspiration_retry++;
                 window = std::min(window * 2, ASPIRATION_WINDOW_MAX);
+                // Recenter window symmetrically
+                alpha = prev_score - window;
                 beta = prev_score + window;
-                // alpha stays at prev_score - window
                 
                 #ifdef DEBUG_ASPIRATION
                 std::cerr << "info string aspiration fail-high depth=" << depth << " window=" << window << " retry=" << aspiration_retry << std::endl;
