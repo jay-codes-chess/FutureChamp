@@ -12,6 +12,7 @@
 #include "initiative.hpp"
 #include "knowledge.hpp"
 #include "attack_eval.hpp"
+#include "attack_momentum.hpp"
 #include "params.hpp"
 #include "../utils/board.hpp"
 #include <iostream>
@@ -66,6 +67,12 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     bd.pawn_storm = evaluate_pawn_storm(board);
     bd.line_opening = evaluate_line_opening(board);
     bd.aggressive_initiative = evaluate_aggressive_initiative(board);
+    bd.attack_momentum = evaluate_attack_momentum(
+        board,
+        bd.king_tropism,
+        bd.pawn_storm,
+        bd.line_opening,
+        bd.aggressive_initiative);
     
     // Apply params weights
     // Scale factor (100 = 1.0)
@@ -91,6 +98,7 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     score += bd.pawn_storm;
     score += bd.line_opening;
     score += bd.aggressive_initiative;
+    score += bd.attack_momentum;
     
     // Tempo
     if (board.side_to_move == WHITE) score += 10;
@@ -199,6 +207,7 @@ int evaluate_at_root(const Board& board) {
             << " pawn_storm=" << bd.pawn_storm
             << " line_open=" << bd.line_opening
             << " agg_init=" << bd.aggressive_initiative
+            << " attack_mom=" << bd.attack_momentum
             << " total=" << bd.total;
         
         // Optionally include params in trace

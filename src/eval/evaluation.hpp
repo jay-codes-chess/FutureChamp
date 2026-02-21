@@ -54,6 +54,7 @@ struct ScoreBreakdown {
     int pawn_storm = 0;
     int line_opening = 0;
     int aggressive_initiative = 0;
+    int attack_momentum = 0;
     int total = 0;
 };
 
