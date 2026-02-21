@@ -17,33 +17,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install MinGW-w64
-        run: |
-          choco install mingw -y
-          refreshenv
+      - name: Install MinGW
+        run: choco install mingw -y
 
       - name: Compile FutureChamp
-        shell: cmd
         run: |
-          g++ -o FutureChamp.exe ^
-            .\src\*.cpp ^
-            .\src\eval\*.cpp ^
-            .\src\search\*.cpp ^
-            .\src\uci\*.cpp ^
-            .\src\utils\*.cpp ^
-            -Isrc -Isrc\eval -Isrc\search -Isrc\uci -Isrc\utils ^
-            -O2 -std=c++17 ^
-            -static-libgcc -static-libstdc++ ^
-            -DNDEBUG
+          g++ -o FutureChamp.exe -O2 -std=c++17 -static-libgcc -static-libstdc++ -DNDEBUG -Isrc -Isrc/eval -Isrc/search -Isrc/uci -Isrc/utils ./src/*.cpp ./src/eval/*.cpp ./src/search/*.cpp ./src/uci/*.cpp ./src/utils/*.cpp
 
       - name: Verify executable
-        run: |
-          if exist FutureChamp.exe (
-            for %%A in (FutureChamp.exe) do echo FutureChamp.exe created: %%~zA bytes
-          ) else (
-            echo ERROR: FutureChamp.exe not found
-            exit /b 1
-          )
+        run: ls -la FutureChamp.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
