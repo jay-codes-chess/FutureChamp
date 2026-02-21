@@ -13,6 +13,7 @@
 #include "knowledge.hpp"
 #include "attack_eval.hpp"
 #include "attack_momentum.hpp"
+#include "sacrifice_eval.hpp"
 #include "params.hpp"
 #include "../utils/board.hpp"
 #include <iostream>
@@ -73,6 +74,10 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
         bd.pawn_storm,
         bd.line_opening,
         bd.aggressive_initiative);
+    bd.sacrifice_justification = evaluate_sacrifice_justification(
+        board,
+        bd.material,
+        bd.attack_momentum);
     
     // Apply params weights
     // Scale factor (100 = 1.0)
@@ -99,6 +104,7 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     score += bd.line_opening;
     score += bd.aggressive_initiative;
     score += bd.attack_momentum;
+    score += bd.sacrifice_justification;
     
     // Tempo
     if (board.side_to_move == WHITE) score += 10;
@@ -208,6 +214,7 @@ int evaluate_at_root(const Board& board) {
             << " line_open=" << bd.line_opening
             << " agg_init=" << bd.aggressive_initiative
             << " attack_mom=" << bd.attack_momentum
+            << " sacrifice=" << bd.sacrifice_justification
             << " total=" << bd.total;
         
         // Optionally include params in trace
