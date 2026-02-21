@@ -14,6 +14,7 @@
 #include "human_selection.hpp"
 #include "../utils/board.hpp"
 #include "../eval/evaluation.hpp"
+#include "../eval/pawn_structure.hpp"
 #include "../eval/params.hpp"
 #include <iostream>
 #include <chrono>
@@ -1408,6 +1409,9 @@ SearchResult search(const std::string& fen, int max_time_ms_param, int max_searc
     
     result.nodes = nodes_searched;
     result.time_ms = get_elapsed_ms();
+    
+    // Print pawn hash statistics
+    Evaluation::print_pawn_hash_stats();
     
     // Output root eval trace if enabled
     if (Evaluation::get_debug_trace()) {

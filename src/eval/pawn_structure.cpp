@@ -5,8 +5,92 @@
 #include "pawn_structure.hpp"
 #include "material.hpp"
 #include <cmath>
+#include <iostream>
 
 namespace Evaluation {
+
+// Pawn hash table
+static const int PAWN_HASH_SIZE = 1 << 16;  // 65536 entries
+
+struct PawnHashEntry {
+    uint64_t key;
+    int pawn_score;
+    bool valid;
+};
+
+static PawnHashEntry* pawn_hash_table = nullptr;
+static uint64_t pawn_hash_probes = 0;
+static uint64_t pawn_hash_hits = 0;
+
+// Compute pawn-only Zobrist key
+uint64_t compute_pawn_hash(const Board& board) {
+    // Use only pawn positions for pawn hash
+    // We can derive this from the board's full hash, but simpler to compute fresh
+    static bool initialized = false;
+    static uint64_t pawn_keys[2][64];
+    
+    if (!initialized) {
+        uint64_t seed = 0xDEADBEEF12345678ULL;
+        for (int sq = 0; sq < 64; sq++) {
+            seed = seed * 6364136223846793005ULL + 1442695040888963407ULL;
+            pawn_keys[0][sq] = seed;
+            seed = seed * 6364136223846793005ULL + 1442695040888963407ULL;
+            pawn_keys[1][sq] = seed;
+        }
+        initialized = true;
+    }
+    
+    uint64_t key = 0;
+    for (int sq = 0; sq < 64; sq++) {
+        if (board.piece_at(sq) == PAWN) {
+            int c = board.color_at(sq);
+            key ^= pawn_keys[c][sq];
+        }
+    }
+    return key;
+}
+
+// Initialize pawn hash table
+void init_pawn_hash() {
+    if (pawn_hash_table == nullptr) {
+        pawn_hash_table = new PawnHashEntry[PAWN_HASH_SIZE];
+    }
+    for (int i = 0; i < PAWN_HASH_SIZE; i++) {
+        pawn_hash_table[i].key = 0;
+        pawn_hash_table[i].pawn_score = 0;
+        pawn_hash_table[i].valid = false;
+    }
+    pawn_hash_probes = 0;
+    pawn_hash_hits = 0;
+}
+
+// Get pawn hash statistics
+void print_pawn_hash_stats() {
+    if (pawn_hash_probes > 0) {
+        int hitrate = static_cast<int>((pawn_hash_hits * 100) / pawn_hash_probes);
+        std::cerr << "info string pawn_hash hitrate=" << hitrate << "% probes=" << pawn_hash_probes << " hits=" << pawn_hash_hits << std::endl;
+    }
+}
+
+// Probe pawn hash
+static int probe_pawn_hash(uint64_t key, int& score) {
+    pawn_hash_probes++;
+    int idx = key & (PAWN_HASH_SIZE - 1);
+    if (pawn_hash_table[idx].valid && pawn_hash_table[idx].key == key) {
+        pawn_hash_hits++;
+        score = pawn_hash_table[idx].pawn_score;
+        return 1;  // Hit
+    }
+    return 0;  // Miss
+}
+
+// Store in pawn hash
+static void store_pawn_hash(uint64_t key, int score) {
+    int idx = key & (PAWN_HASH_SIZE - 1);
+    pawn_hash_table[idx].key = key;
+    pawn_hash_table[idx].pawn_score = score;
+    pawn_hash_table[idx].valid = true;
+}
 
 int evaluate_pawns_for_color(const Board& board, int color);
 
@@ -14,6 +98,20 @@ int evaluate_pawns_for_color(const Board& board, int color);
 // Using forward declaration to avoid circular dependency
 
 int evaluate_pawn_structure(const Board& board) {
+    // Initialize pawn hash on first call
+    static bool initialized = false;
+    if (!initialized) {
+        init_pawn_hash();
+        initialized = true;
+    }
+    
+    // Probe pawn hash
+    uint64_t pawn_key = compute_pawn_hash(board);
+    int cached_score = 0;
+    if (probe_pawn_hash(pawn_key, cached_score)) {
+        return cached_score;
+    }
+    
     int score = 0;
     
     // Early game center pawn bonus
@@ -38,6 +136,9 @@ int evaluate_pawn_structure(const Board& board) {
     // Evaluate pawns for each color
     score += evaluate_pawns_for_color(board, WHITE);
     score -= evaluate_pawns_for_color(board, BLACK);
+    
+    // Store in pawn hash
+    store_pawn_hash(pawn_key, score);
     
     return score;
 }

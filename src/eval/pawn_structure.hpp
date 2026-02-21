@@ -13,6 +13,12 @@ namespace Evaluation {
 // Pawn structure evaluation - returns centipawns from White's perspective
 int evaluate_pawn_structure(const Board& board);
 
+// Pawn hash statistics
+void print_pawn_hash_stats();
+
+// Initialize pawn hash
+void init_pawn_hash();
+
 // Internal helper declarations (extracted from evaluation.cpp)
 bool is_opening(const Board& board);
 
