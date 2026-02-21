@@ -56,6 +56,7 @@ struct ScoreBreakdown {
     int aggressive_initiative = 0;
     int attack_momentum = 0;
     int sacrifice_justification = 0;
+    int exchange_sac_tolerance = 0;
     int total = 0;
 };
 

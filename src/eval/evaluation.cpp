@@ -78,6 +78,11 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
         board,
         bd.material,
         bd.attack_momentum);
+    bd.exchange_sac_tolerance = evaluate_exchange_sac_tolerance(
+        board,
+        bd.attack_momentum,
+        bd.line_opening,
+        bd.king_tropism);
     
     // Apply params weights
     // Scale factor (100 = 1.0)
@@ -105,6 +110,7 @@ ScoreBreakdown evaluate_with_breakdown(const Board& board) {
     score += bd.aggressive_initiative;
     score += bd.attack_momentum;
     score += bd.sacrifice_justification;
+    score += bd.exchange_sac_tolerance;
     
     // Tempo
     if (board.side_to_move == WHITE) score += 10;
@@ -215,6 +221,7 @@ int evaluate_at_root(const Board& board) {
             << " agg_init=" << bd.aggressive_initiative
             << " attack_mom=" << bd.attack_momentum
             << " sacrifice=" << bd.sacrifice_justification
+            << " exch_sac=" << bd.exchange_sac_tolerance
             << " total=" << bd.total;
         
         // Optionally include params in trace
